@@ -67,10 +67,37 @@ export const foods = {
 
   get: async (id: string) => {
     try {
-      return await api.get(`/foods/${id}`);
+      const res = await api.get(`/foods/${id}`);
+      if (res.data) return res;
     } catch {}
-    const local = getLocalFoods().find(f => f.id === id);
-    return { data: local || null };
+    const foodsList = getLocalFoods();
+    let local = foodsList.find(f => f.id === id);
+    if (!local) {
+      const cleanId = id.toLowerCase().replace('demo-', '').replace('f-demo-', '');
+      local = foodsList.find(f => f.id.toLowerCase().includes(cleanId) || f.name.toLowerCase().includes(cleanId));
+    }
+    if (!local) {
+      local = {
+        id,
+        user_id: '00000000-0000-0000-0000-000000000001',
+        name: id.replace(/^demo-|^f-demo-/, '').replace(/^./, str => str.toUpperCase()),
+        category: 'Vegetables',
+        quantity: 1,
+        unit: 'pack',
+        date_type: 'BEST_BEFORE',
+        listed_date: new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10),
+        image_url: null,
+        status: 'ACTIVE',
+        notification_enabled: true,
+        storage_location: 'FRIDGE',
+        storage_tip: 'Store on main fridge shelf or in crisper drawer.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        consumed_at: null,
+        discarded_at: null,
+      };
+    }
+    return { data: local };
   },
 
   add: async (data: Record<string, unknown>) => {

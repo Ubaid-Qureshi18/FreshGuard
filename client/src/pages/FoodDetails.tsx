@@ -32,11 +32,16 @@ export default function FoodDetails() {
   const [showAdviceDetails, setShowAdviceDetails] = useState(false);
 
   useEffect(() => {
-    if (!id || id.startsWith('demo-')) { setLoading(false); return; }
+    if (!id) { setLoading(false); return; }
+    setLoading(true);
     foodsApi.get(id).then(({ data }) => {
-      setFood(data);
-      setEditForm(data);
-    }).catch(() => toast.error('Food not found')).finally(() => setLoading(false));
+      if (data) {
+        setFood(data);
+        setEditForm(data);
+      }
+    }).catch(() => {
+      toast.error('Could not load food details');
+    }).finally(() => setLoading(false));
   }, [id]);
 
   const loadStorageAdvice = async () => {

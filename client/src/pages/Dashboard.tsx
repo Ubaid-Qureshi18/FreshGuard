@@ -204,7 +204,7 @@ export default function Dashboard() {
             >
               <FoodCard
                 food={food}
-                onQuickConsume={!useDemoData ? handleQuickConsume : undefined}
+                onQuickConsume={handleQuickConsume}
               />
             </motion.div>
           ))}
