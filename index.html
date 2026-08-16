@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#2D7A4F">
+  <title>FreshGuard — Your Food's Expiry Guardian</title>
+  <meta name="description" content="FreshGuard uses AI to turn expiry dates into action — track your pantry, get smart reminders, and generate recipes from ingredients that need to be used first.">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/app.css">
+
+  <style>
+    /* Inline overrides for single-file SPA */
+    #auth-screen, #app-screen { transition: opacity 0.2s ease; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     AUTH SCREEN
+══════════════════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-card animate-scale-in">
+
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div class="auth-logo-icon">🌿</div>
+      <div class="auth-title">FreshGuard</div>
+      <div class="auth-tagline">Your food's expiry guardian</div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="auth-tab-signin">Sign In</button>
+      <button class="auth-tab" id="auth-tab-signup">Sign Up</button>
+    </div>
+
+    <!-- Sign In Form -->
+    <form id="sign-in-form" style="display:flex;flex-direction:column;gap:var(--space-4)">
+      <div class="form-group">
+        <label class="form-label" for="si-email">Email</label>
+        <input class="form-input" id="si-email" type="email" placeholder="you@example.com" autocomplete="email" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="si-password">Password</label>
+        <input class="form-input" id="si-password" type="password" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <div class="form-error hidden" id="signin-error"></div>
+      <button class="btn btn-primary btn-full" id="btn-signin" type="submit">
+        Sign In
+      </button>
+      <div class="text-center text-sm text-muted">
+        Don't have an account? <a href="#" onclick="document.getElementById('auth-tab-signup').click();return false;" style="color:var(--color-primary)">Sign Up</a>
+      </div>
+    </form>
+
+    <!-- Sign Up Form -->
+    <form id="sign-up-form" class="hidden" style="display:flex;flex-direction:column;gap:var(--space-4)">
+      <div class="form-group">
+        <label class="form-label" for="su-email">Email</label>
+        <input class="form-input" id="su-email" type="email" placeholder="you@example.com" autocomplete="email" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="su-password">Password</label>
+        <input class="form-input" id="su-password" type="password" placeholder="At least 6 characters" autocomplete="new-password" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="su-confirm">Confirm Password</label>
+        <input class="form-input" id="su-confirm" type="password" placeholder="Repeat your password" autocomplete="new-password" required>
+      </div>
+      <div class="form-error hidden" id="signup-error"></div>
+      <button class="btn btn-primary btn-full" id="btn-signup" type="submit">
+        Create Account
+      </button>
+      <div class="text-center text-sm text-muted" style="line-height:1.5">
+        By signing up you agree to use this app for food tracking only.
+      </div>
+    </form>
+
+    <!-- Footer -->
+    <div class="text-center text-xs text-muted" style="margin-top:var(--space-6);padding-top:var(--space-4);border-top:1px solid var(--color-border)">
+      🌿 FreshGuard · Part of NutriMind AI
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     APP SCREEN (shown after login)
+══════════════════════════════════════════════════ -->
+<div id="app-screen" class="hidden" style="display:flex;flex-direction:column;min-height:100vh">
+
+  <!-- ── Top Navigation (changes per view) ──────── -->
+  <header class="top-nav" id="main-top-nav">
+    <div class="logo">
+      <div class="logo-icon">🌿</div>
+      <div>
+        <div class="logo-text">FreshGuard</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:var(--space-2);align-items:center">
+      <button class="btn btn-ghost btn-icon" id="btn-top-settings" title="Settings" style="font-size:1.2rem">⚙️</button>
+      <button class="btn btn-ghost btn-icon" id="btn-sign-out" title="Sign Out" style="font-size:1.1rem">⎋</button>
+    </div>
+  </header>
+
+  <!-- ── Main Content Area ───────────────────────── -->
+  <main style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+
+    <!-- ─────────────────────────────────────────────
+         VIEW: DASHBOARD
+    ───────────────────────────────────────────── -->
+    <div id="view-dashboard" class="page-content">
+
+      <!-- Notification Banner -->
+      <div class="notif-banner hidden" id="notif-banner">
+        <span style="font-size:1.5rem">🔔</span>
+        <div class="notif-banner-text">
+          <div class="title">Enable Notifications</div>
+          <div class="sub">Get reminders before food expires</div>
+        </div>
+        <span style="color:rgba(255,255,255,0.8);font-size:1.2rem">›</span>
+      </div>
+
+      <!-- Header -->
+      <div class="dashboard-header animate-fade-in">
+        <div class="dashboard-greeting" id="dashboard-greeting">Good morning!</div>
+        <div class="dashboard-date" id="dashboard-date"></div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid mb-6">
+        <div class="stat-card stagger-1 animate-slide-up">
+          <div class="stat-number" id="stat-total">0</div>
+          <div class="stat-label">Foods Tracked</div>
+        </div>
+        <div class="stat-card stagger-2 animate-slide-up">
+          <div class="stat-number" id="stat-urgent">0</div>
+          <div class="stat-label">Use Soon</div>
+        </div>
+      </div>
+
+      <!-- Rescue Banner -->
+      <div class="rescue-banner hidden" id="rescue-banner">
+        <div class="rescue-banner-text">
+          <div class="title">🍳 Rescue My Food</div>
+          <div class="subtitle" id="rescue-subtitle">Ingredients need attention</div>
+        </div>
+        <div class="rescue-banner-icon">🔥</div>
+      </div>
+
+      <!-- Use First Section -->
+      <div class="section-header">
+        <div class="section-title">USE FIRST</div>
+        <div class="section-action" id="btn-view-all-pantry">View all →</div>
+      </div>
+      <div class="use-first-list" id="use-first-list">
+        <div class="loading-overlay">
+          <div class="spinner"></div>
+          <div class="loading-text">Loading your pantry…</div>
+        </div>
+      </div>
+
+      <!-- Add button -->
+      <button class="btn btn-secondary btn-full" id="btn-dash-add" style="margin-top:var(--space-4)">
+        ➕ Add Food Item
+      </button>
+    </div>
+
+    <!-- ─────────────────────────────────────────────
+         VIEW: PANTRY
+    ───────────────────────────────────────────── -->
+    <div id="view-pantry" class="page-content hidden">
+      <div class="pantry-tabs-container">
+        <div class="tabs">
+          <button class="tab pantry-tab active" data-tab="ALL">All</button>
+          <button class="tab pantry-tab" data-tab="USE-SOON">⚠ Use Soon</button>
+          <button class="tab pantry-tab" data-tab="COMING">Coming</button>
+          <button class="tab pantry-tab" data-tab="FRESH">Fresh</button>
+          <button class="tab pantry-tab" data-tab="PAST">Past Date</button>
+        </div>
+      </div>
+
+      <div id="pantry-list">
+        <div class="loading-overlay">
+          <div class="spinner"></div>
+        </div>
+      </div>
+
+      <button class="btn btn-secondary btn-full" id="btn-pantry-add" style="margin-top:var(--space-4)">
+        ➕ Add Food Item
+      </button>
+    </div>
+
+    <!-- ─────────────────────────────────────────────
+         VIEW: RESCUE MY FOOD
+    ───────────────────────────────────────────── -->
+    <div id="view-rescue" class="page-content hidden">
+      <div class="rescue-header animate-fade-in">
+        <div class="rescue-title">🍳 Rescue Your Food</div>
+        <div class="rescue-subtitle">Let's use ingredients that need attention first.</div>
+
+        <div style="margin-top:var(--space-4)">
+          <div class="section-title mb-3">NEEDS ATTENTION</div>
+          <div class="urgent-ingredients" id="rescue-urgent-list">
+            <div class="loading-overlay"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-rescue btn-full hidden" id="btn-generate-recipes">
+        🤖 Generate AI Recipes
+      </button>
+
+      <div id="rescue-recipes-section" class="hidden" style="margin-top:var(--space-6)">
+        <div class="section-header mb-4">
+          <div class="section-title">RECOMMENDED FOR YOU</div>
+          <div class="text-xs text-muted">Powered by Gemini AI</div>
+        </div>
+        <div id="rescue-recipes-list" style="display:flex;flex-direction:column;gap:var(--space-4)"></div>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────────
+         VIEW: IMPACT DASHBOARD
+    ───────────────────────────────────────────── -->
+    <div id="view-impact" class="page-content hidden">
+      <div class="impact-header animate-fade-in">
+        <div class="impact-headline">Your FreshGuard Impact</div>
+        <div class="impact-title">Every tracked item<br>fights food waste</div>
+        <span class="impact-badge">🌍 Making a difference</span>
+      </div>
+
+      <div class="impact-grid mb-8">
+        <div class="impact-card animate-slide-up stagger-1">
+          <div class="impact-icon">🌿</div>
+          <div class="impact-number" id="impact-stat-added">0</div>
+          <div class="impact-label">Foods Tracked</div>
+        </div>
+        <div class="impact-card animate-slide-up stagger-2">
+          <div class="impact-icon">✅</div>
+          <div class="impact-number" id="impact-stat-consumed">0</div>
+          <div class="impact-label">Foods Consumed</div>
+        </div>
+        <div class="impact-card animate-slide-up stagger-3">
+          <div class="impact-icon">🍳</div>
+          <div class="impact-number" id="impact-stat-rescued">0</div>
+          <div class="impact-label">Foods Rescued</div>
+        </div>
+        <div class="impact-card animate-slide-up stagger-4">
+          <div class="impact-icon">🗑</div>
+          <div class="impact-number" id="impact-stat-discarded">0</div>
+          <div class="impact-label">Discarded</div>
+        </div>
+      </div>
+
+      <div class="section-title mb-3">RECENT ACTIVITY</div>
+      <div id="impact-timeline"></div>
+    </div>
+
+    <!-- ─────────────────────────────────────────────
+         VIEW: SETTINGS
+    ───────────────────────────────────────────── -->
+    <div id="view-settings" class="page-content hidden">
+
+      <!-- Account -->
+      <div class="settings-section animate-slide-up stagger-1">
+        <div class="settings-section-title">Account</div>
+        <div class="settings-row" style="cursor:default">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">👤</div>
+            <div>
+              <div class="settings-row-label">Signed in as</div>
+              <div class="settings-row-sub" id="settings-email">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-row" id="btn-sign-out-settings">
+          <div class="settings-row-left">
+            <div class="settings-row-icon" style="background:#FEE2E2">🚪</div>
+            <div class="settings-row-label" style="color:var(--color-danger)">Sign Out</div>
+          </div>
+          <span style="color:var(--color-text-muted)">›</span>
+        </div>
+      </div>
+
+      <!-- AI Configuration -->
+      <div class="settings-section animate-slide-up stagger-2">
+        <div class="settings-section-title">AI Configuration</div>
+        <div style="padding:var(--space-4)">
+          <div class="form-group mb-3">
+            <label class="form-label" for="gemini-key-input">
+              Gemini API Key
+              <span class="text-xs text-muted" style="margin-left:4px" id="gemini-status">❌ Not set</span>
+            </label>
+            <input class="form-input" id="gemini-key-input" type="password"
+              placeholder="Paste your Gemini API key here"
+              autocomplete="off">
+            <div class="form-hint mt-2">
+              Get your free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com</a>.
+              Your key is stored only in your browser.
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+            <button class="btn btn-primary" id="btn-save-gemini-key">Save Key</button>
+            <button class="btn btn-secondary" id="btn-clear-gemini-key">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="settings-section animate-slide-up stagger-3">
+        <div class="settings-section-title">Notifications</div>
+        <div style="padding:var(--space-4)">
+          <p class="text-sm text-muted mb-3" style="line-height:1.6">
+            FreshGuard sends browser notifications as food approaches its listed date — 7 days, 3 days, 1 day, and on the date itself.
+          </p>
+          <button class="btn btn-secondary btn-full" id="btn-test-notif">🔔 Enable & Test Notifications</button>
+        </div>
+      </div>
+
+      <!-- About -->
+      <div class="settings-section animate-slide-up stagger-4">
+        <div class="settings-section-title">About</div>
+        <div class="settings-row" style="cursor:default">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">🌿</div>
+            <div>
+              <div class="settings-row-label">FreshGuard</div>
+              <div class="settings-row-sub">Part of NutriMind AI · Version 1.0</div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-row" style="cursor:default">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">🤖</div>
+            <div>
+              <div class="settings-row-label">AI Engine</div>
+              <div class="settings-row-sub">Google Gemini 2.0 Flash</div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-row" style="cursor:default">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">🗄</div>
+            <div>
+              <div class="settings-row-label">Database</div>
+              <div class="settings-row-sub">Supabase (PostgreSQL)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center text-xs text-muted" style="padding:var(--space-4)">
+        🌍 Helping reduce food waste, one pantry at a time.
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Bottom Navigation ───────────────────────── -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-home">
+      <span class="nav-item-icon">🏠</span>
+      <span class="nav-item-label">Home</span>
+    </button>
+    <button class="nav-item" id="nav-pantry">
+      <span class="nav-item-icon">🥗</span>
+      <span class="nav-item-label">Pantry</span>
+    </button>
+    <button class="nav-scan-fab" id="nav-scan">
+      <div class="nav-scan-icon">📷</div>
+      <span class="nav-scan-label">Scan</span>
+    </button>
+    <button class="nav-item" id="nav-rescue">
+      <span class="nav-item-icon">🍳</span>
+      <span class="nav-item-label">Rescue</span>
+    </button>
+    <button class="nav-item" id="nav-impact">
+      <span class="nav-item-icon">🌍</span>
+      <span class="nav-item-label">Impact</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- ── Toast Container ────────────────────────────────── -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ── App Entry Point ──────────────────────────────── -->
+<script type="module">
+  import { initAuth, setupAuthListeners } from './js/auth.js';
+  setupAuthListeners();
+  initAuth();
+</script>
+
+</body>
+</html>
