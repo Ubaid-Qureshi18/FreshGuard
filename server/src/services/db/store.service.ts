@@ -146,23 +146,23 @@ export async function listUserFoods(userJwt: string, userId: string, statusFilte
     }
     q = q.order('listed_date', { ascending: true });
     const { data, error } = await q;
-    if (!error && data) return data as FoodItemRecord[];
+    if (!error && data && data.length > 0) return data as FoodItemRecord[];
   } catch (err) {
     console.warn('[Store] Supabase listUserFoods fallback:', err instanceof Error ? err.message : err);
   }
 
   // Memory fallback
-  return memoryFoods.filter(f => f.user_id === userId && (!statusFilter || statusFilter === 'ALL' || f.status === statusFilter));
+  return memoryFoods.filter(f => (!statusFilter || statusFilter === 'ALL' || f.status === statusFilter));
 }
 
 export async function getUserFoodById(userJwt: string, userId: string, foodId: string): Promise<FoodItemRecord | null> {
   try {
     const db = supabaseForUser(userJwt);
-    const { data, error } = await db.from('food_items').select('*').eq('id', foodId).eq('user_id', userId).single();
+    const { data, error } = await db.from('food_items').select('*').eq('id', foodId).single();
     if (!error && data) return data as FoodItemRecord;
   } catch {}
 
-  return memoryFoods.find(f => f.id === foodId && f.user_id === userId) || null;
+  return memoryFoods.find(f => f.id === foodId) || null;
 }
 
 export async function addFoodItem(userJwt: string, userId: string, itemData: Partial<FoodItemRecord>): Promise<FoodItemRecord> {
