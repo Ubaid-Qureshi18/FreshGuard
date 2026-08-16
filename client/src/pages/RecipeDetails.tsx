@@ -40,6 +40,10 @@ export default function RecipeDetails() {
     );
   }
 
+  const safeIngredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+  const safeExtraIngredients = Array.isArray(recipe.extraIngredients) ? recipe.extraIngredients : [];
+  const safeInstructions = Array.isArray(recipe.instructions) ? recipe.instructions : [];
+
   const toggleStep = (i: number) => {
     setCheckedSteps(prev => {
       const next = new Set(prev);
@@ -48,7 +52,7 @@ export default function RecipeDetails() {
       } else {
         next.add(i);
         soundSynth.playReminderChime(0.5);
-        if (next.size === recipe.instructions.length) {
+        if (next.size === safeInstructions.length) {
           soundSynth.playSuccessChime(0.85);
           toast.success('🎉 Congratulations! You completed this zero-waste meal!');
         }
@@ -155,7 +159,7 @@ export default function RecipeDetails() {
         </div>
 
         <div className="space-y-2">
-          {recipe.ingredients.map((ing, i) => (
+          {safeIngredients.map((ing, i) => (
             <div key={i}>
               <button
                 type="button"
@@ -208,11 +212,11 @@ export default function RecipeDetails() {
             </div>
           ))}
 
-          {recipe.extraIngredients && recipe.extraIngredients.length > 0 && (
+          {safeExtraIngredients.length > 0 && (
             <div className="pt-3 border-t border-gray-100 text-xs">
               <div className="text-[11px] font-bold text-gray-400 mb-1">Optional Pantry Seasonings:</div>
               <div className="flex flex-wrap gap-1.5">
-                {recipe.extraIngredients.map((e, i) => (
+                {safeExtraIngredients.map((e, i) => (
                   <span key={i} className="text-[11px] text-gray-600 bg-gray-100 px-2 py-0.5 rounded-lg">
                     {e}
                   </span>
@@ -241,12 +245,12 @@ export default function RecipeDetails() {
             Step-by-Step Cooking Guide
           </div>
           <span className="text-[11px] font-bold text-gray-500">
-            {checkedSteps.size} / {recipe.instructions.length} completed
+            {checkedSteps.size} / {safeInstructions.length} completed
           </span>
         </div>
 
         <div className="space-y-2.5">
-          {recipe.instructions.map((step, i) => {
+          {safeInstructions.map((step, i) => {
             const isDone = checkedSteps.has(i);
             return (
               <button

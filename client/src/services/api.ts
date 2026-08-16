@@ -1,13 +1,12 @@
 import axios from 'axios';
 
+const GUEST_TOKEN = `dev_token_guest_user%40freshguard.app`;
+
 const api = axios.create({ baseURL: '/api' });
 
-// Attach auth token from localStorage on every request
+// Always send the guest token — no login required
 api.interceptors.request.use(config => {
-  const session = getSession();
-  if (session?.access_token) {
-    config.headers.Authorization = `Bearer ${session.access_token}`;
-  }
+  config.headers.Authorization = `Bearer ${GUEST_TOKEN}`;
   return config;
 });
 

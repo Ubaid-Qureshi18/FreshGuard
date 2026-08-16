@@ -41,7 +41,7 @@ export default function Rescue() {
   const loadFoods = useCallback(async () => {
     try {
       const { data } = await foodsApi.list('ACTIVE');
-      setAllFoods(data);
+      setAllFoods(Array.isArray(data) ? data : (Array.isArray(data?.foods) ? data.foods : []));
     } catch {
       toast.error('Could not load pantry items');
     } finally {
@@ -51,7 +51,8 @@ export default function Rescue() {
 
   useEffect(() => { loadFoods(); }, [loadFoods]);
 
-  const enriched = sortByUrgency(allFoods.map(enrichFood));
+  const safeFoods = Array.isArray(allFoods) ? allFoods : [];
+  const enriched = sortByUrgency(safeFoods.map(enrichFood));
   const urgentFoods = enriched.filter(f => f.daysRemaining <= 3);
 
   const toggleSelectIngredient = (id: string) => {
@@ -65,7 +66,7 @@ export default function Rescue() {
     try {
       const idsToUse = selectedIds.length > 0 ? selectedIds : undefined;
       const { data } = await recipesApi.generate(idsToUse);
-      const result = data.recipes as Recipe[];
+      const result = (Array.isArray(data?.recipes) ? data.recipes : []) as Recipe[];
       persistLastRecipes(result);
       setRecipes(result);
       setGenerated(true);
@@ -80,7 +81,7 @@ export default function Rescue() {
     setLoadingMealPlan(true);
     try {
       const { data } = await aiApi.getMealPlan();
-      if (data.plan) {
+      if (data?.plan && Array.isArray(data.plan)) {
         setMealPlan(data.plan as MealPlanDay[]);
         toast.success('AI 3-Day Meal Plan Generated! 🥗');
       }
@@ -91,7 +92,8 @@ export default function Rescue() {
     }
   };
 
-  const filteredRecipes = recipes.filter(r => {
+  const safeRecipes = Array.isArray(recipes) ? recipes : [];
+  const filteredRecipes = safeRecipes.filter(r => {
     if (recipeFilter === 'quick') {
       const mins = parseInt(r.prepTime || '30', 10);
       return mins <= 20 || r.prepTime.includes('15') || r.prepTime.includes('10');

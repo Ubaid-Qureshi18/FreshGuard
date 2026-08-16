@@ -61,7 +61,7 @@ export default function Pantry() {
   const load = useCallback(async () => {
     try {
       const { data } = await foodsApi.list('ACTIVE');
-      setFoods(data);
+      setFoods(Array.isArray(data) ? data : (Array.isArray(data?.foods) ? data.foods : []));
     } catch { toast.error('Could not load pantry'); }
     finally { setLoading(false); }
   }, []);
@@ -95,12 +95,14 @@ export default function Pantry() {
     }
   };
 
+  const safeFoods = Array.isArray(foods) ? foods : [];
+
   const copyPantrySummary = () => {
-    if (foods.length === 0) {
+    if (safeFoods.length === 0) {
       toast.error('No items in pantry to copy');
       return;
     }
-    const text = foods
+    const text = safeFoods
       .filter(f => f.status === 'ACTIVE')
       .map(f => `• ${f.name} (${f.category}) — Best Before: ${f.listed_date} [${f.storage_location || 'FRIDGE'}]`)
       .join('\n');
@@ -109,7 +111,7 @@ export default function Pantry() {
     toast.success('Pantry list copied to clipboard! 📋');
   };
 
-  const enriched = foods.map(f => ({ ...enrichFood(f), _created: f.created_at }));
+  const enriched = safeFoods.map(f => ({ ...enrichFood(f), _created: f.created_at }));
 
   // Status Filter
   const statusFilterMap: Record<Tab, FreshnessStatus[]> = {

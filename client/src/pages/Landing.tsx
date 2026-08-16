@@ -53,8 +53,7 @@ export default function Landing() {
             <span className="font-bold text-gray-900 text-lg">FreshGuard</span>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/login')} className="btn-ghost text-sm">Sign In</button>
-            <button onClick={() => navigate('/register')} className="btn-primary text-sm">Get Started</button>
+            <button onClick={() => navigate('/dashboard')} className="btn-primary text-sm">Open App →</button>
           </div>
         </div>
       </nav>
@@ -81,7 +80,7 @@ export default function Landing() {
             </p>
             <div className="flex flex-wrap gap-3 mb-8">
               <button
-                onClick={() => navigate('/register')}
+                onClick={() => navigate('/dashboard')}
                 className="btn-primary flex items-center gap-2 text-base px-6 py-3"
               >
                 Start Tracking Free <ArrowRight size={18} />
@@ -244,7 +243,7 @@ export default function Landing() {
           </h2>
           <p className="text-green-100 text-lg mb-8">Join thousands of households reducing food waste with FreshGuard.</p>
           <button
-            onClick={() => navigate('/register')}
+            onClick={() => navigate('/dashboard')}
             className="bg-white text-green-700 font-bold px-8 py-4 rounded-2xl text-lg hover:bg-green-50 transition-colors shadow-lg"
           >
             Start Tracking — It's Free

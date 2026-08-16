@@ -38,7 +38,7 @@ export default function Notifications() {
 
       // 2. Fetch notifications
       const { data } = await notifApi.list();
-      setItems(data);
+      setItems(Array.isArray(data) ? data : (Array.isArray(data?.notifications) ? data.notifications : []));
 
       // Play alert chime if urgent items exist and sound enabled
       if (soundEnabled && alarmStatus.urgentCount > 0) {
@@ -128,7 +128,8 @@ export default function Notifications() {
     }
   };
 
-  const unreadCount = items.filter(n => !n.read).length;
+  const safeItems = Array.isArray(items) ? items : [];
+  const unreadCount = safeItems.filter(n => !n.read).length;
 
   const formatTime = (ts: string) => {
     const d = new Date(ts);
@@ -140,7 +141,7 @@ export default function Notifications() {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const filteredItems = items.filter(item => {
+  const filteredItems = safeItems.filter(item => {
     if (filter === 'unread') return !item.read;
     if (filter === 'urgent') return item.type === 'URGENT' || item.type === 'EXPIRED';
     if (filter === 'upcoming') return item.type === 'REMINDER';

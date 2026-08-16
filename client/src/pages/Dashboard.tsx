@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { foods as foodsApi, stats as statsApi } from '../services/api';
 import type { FoodItem } from '../types';
 import { enrichFood, sortByUrgency, getUrgentFoods } from '../utils/freshness';
@@ -24,7 +23,6 @@ interface LiveStats {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [allFoods, setAllFoods] = useState<FoodItem[]>([]);
   const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
@@ -36,8 +34,13 @@ export default function Dashboard() {
         foodsApi.list('ACTIVE'),
         statsApi.get(),
       ]);
-      if (foodsRes.status === 'fulfilled') setAllFoods(foodsRes.value.data);
-      if (statsRes.status === 'fulfilled') setLiveStats(statsRes.value.data.stats);
+      if (foodsRes.status === 'fulfilled') {
+        const rawData = foodsRes.value.data;
+        setAllFoods(Array.isArray(rawData) ? rawData : (Array.isArray(rawData?.foods) ? rawData.foods : []));
+      }
+      if (statsRes.status === 'fulfilled' && statsRes.value.data?.stats) {
+        setLiveStats(statsRes.value.data.stats);
+      }
     } catch {
       toast.error('Could not load dashboard data');
     } finally {
@@ -61,8 +64,9 @@ export default function Dashboard() {
     } catch { toast.error('Failed to update'); }
   };
 
-  const enriched = sortByUrgency(allFoods.map(enrichFood));
-  const useDemoData = !loading && allFoods.length === 0;
+  const safeFoods = Array.isArray(allFoods) ? allFoods : [];
+  const enriched = sortByUrgency(safeFoods.map(enrichFood));
+  const useDemoData = !loading && safeFoods.length === 0;
   const displayItems = useDemoData ? sortByUrgency(DEMO_FOODS.map(enrichFood)) : enriched;
   const displayUrgent = getUrgentFoods(displayItems);
 
@@ -78,7 +82,6 @@ export default function Dashboard() {
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  const name = user?.email?.split('@')[0] || '';
 
   const statCards = [
     { n: stats.total, l: 'Total Items', icon: ShoppingBasket, color: 'from-emerald-500 to-teal-600', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100' },
@@ -96,7 +99,7 @@ export default function Dashboard() {
         className="mb-7"
       >
         <div className="text-[22px] font-bold text-gray-900 tracking-tight">
-          {greeting}{name ? `, ${name}` : ''} 👋
+          {greeting} 👋
         </div>
         <div className="text-gray-400 text-sm mt-1 font-medium">
           {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
