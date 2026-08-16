@@ -61,8 +61,10 @@ export default function RecipeDetails() {
     });
   };
 
-  const getSubstitutes = (ingName: string): string[] => {
-    const key = Object.keys(COMMON_SUBS).find(k => ingName.toLowerCase().includes(k));
+  const getSubstitutes = (ingName?: string): string[] => {
+    if (!ingName) return ['Any seasonal vegetable', 'Pantry broth', 'Olive oil & spices'];
+    const lower = String(ingName).toLowerCase();
+    const key = Object.keys(COMMON_SUBS).find(k => lower.includes(k));
     return key ? COMMON_SUBS[key] : ['Any seasonal vegetable', 'Pantry broth', 'Olive oil & spices'];
   };
 

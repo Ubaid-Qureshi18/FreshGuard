@@ -472,7 +472,7 @@ export default function FoodDetails() {
 
       {food.status !== 'ACTIVE' && (
         <div className="bg-gray-50 rounded-2xl px-5 py-4 text-center text-xs text-gray-500">
-          This item was {food.status.toLowerCase()} on {formatDate(food.consumed_at || food.discarded_at || food.updated_at)}
+          This item was {food.status ? String(food.status).toLowerCase() : 'active'} on {formatDate(food.consumed_at || food.discarded_at || food.updated_at)}
         </div>
       )}
     </div>

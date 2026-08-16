@@ -73,8 +73,11 @@ export const foods = {
     const foodsList = getLocalFoods();
     let local = foodsList.find(f => f.id === id);
     if (!local) {
-      const cleanId = id.toLowerCase().replace('demo-', '').replace('f-demo-', '');
-      local = foodsList.find(f => f.id.toLowerCase().includes(cleanId) || f.name.toLowerCase().includes(cleanId));
+      const cleanId = (id ? String(id) : '').toLowerCase().replace('demo-', '').replace('f-demo-', '');
+      local = foodsList.find(f =>
+        (f?.id ? String(f.id).toLowerCase() : '').includes(cleanId) ||
+        (f?.name ? String(f.name).toLowerCase() : '').includes(cleanId)
+      );
     }
     if (!local) {
       local = {

@@ -132,8 +132,11 @@ export default function Pantry() {
 
   // Search
   if (search) {
-    const q = search.toLowerCase();
-    filtered = filtered.filter(f => f.name.toLowerCase().includes(q) || f.category.toLowerCase().includes(q));
+    const q = String(search).toLowerCase();
+    filtered = filtered.filter(f =>
+      (f?.name ? String(f.name).toLowerCase() : '').includes(q) ||
+      (f?.category ? String(f.category).toLowerCase() : '').includes(q)
+    );
   }
 
   // Sort
