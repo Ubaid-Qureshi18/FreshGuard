@@ -1,73 +1,30 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { auth as authApi, getSession, setSession, clearSession } from '../services/api';
-import type { StoredSession } from '../services/api';
+import React, { createContext, useContext } from 'react';
 
-interface AuthUser { id: string; email: string; }
+// ── Hardcoded guest user — no login required ───────────────
+const GUEST_USER = { id: 'guest-user-001', email: 'user@freshguard.app' };
+const GUEST_SESSION = {
+  access_token: `dev_token_${Date.now()}_user%40freshguard.app`,
+  refresh_token: 'guest_refresh',
+  expires_at: Math.floor(Date.now() / 1000) + 86400 * 365,
+  user: GUEST_USER,
+};
+
 interface AuthContextValue {
-  user: AuthUser | null;
-  session: StoredSession | null;
+  user: { id: string; email: string };
+  session: typeof GUEST_SESSION;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name?: string) => Promise<{ requiresConfirmation: boolean }>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSessionState] = useState<StoredSession | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const stored = getSession();
-    if (stored) {
-      // Check not expired
-      if (stored.expires_at && Date.now() / 1000 < stored.expires_at) {
-        setSessionState(stored);
-      } else {
-        clearSession();
-      }
-    }
-    setLoading(false);
-  }, []);
-
-  const login = useCallback(async (email: string, password: string) => {
-    const { data } = await authApi.login(email, password);
-    const newSession: StoredSession = {
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-      expires_at: data.session.expires_at,
-      user: { id: data.user.id, email: data.user.email },
-    };
-    setSession(newSession);
-    setSessionState(newSession);
-  }, []);
-
-  const register = useCallback(async (email: string, password: string, name?: string) => {
-    const { data } = await authApi.register(email, password, name);
-    if (data.session) {
-      const newSession: StoredSession = {
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-        expires_at: data.session.expires_at,
-        user: { id: data.user.id, email: data.user.email },
-      };
-      setSession(newSession);
-      setSessionState(newSession);
-      return { requiresConfirmation: false };
-    }
-    return { requiresConfirmation: true };
-  }, []);
-
-  const logout = useCallback(() => {
-    clearSession();
-    setSessionState(null);
-  }, []);
-
-  const user = session?.user || null;
+  const logout = () => {
+    // No-op: app works without login
+  };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user: GUEST_USER, session: GUEST_SESSION, loading: false, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,14 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { stats as statsApi } from '../services/api';
-import { useNavigate } from 'react-router-dom';
-import { LogOut, User, Key, Info, TrendingUp, Sparkles, Lightbulb } from 'lucide-react';
+import { Key, Info, TrendingUp, Sparkles, Lightbulb } from 'lucide-react';
 
 const API_KEY_STORAGE = 'fg_display_api_key_note';
 
 export default function Settings() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const [statsData, setStatsData] = useState<{
     added: number; consumed: number; rescued: number; discarded: number;
   } | null>(null);
@@ -23,8 +19,6 @@ export default function Settings() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleLogout = () => { logout(); navigate('/'); };
-
   const wasteScore = statsData
     ? statsData.consumed + statsData.rescued > 0
       ? Math.round(((statsData.consumed + statsData.rescued) / Math.max(statsData.added, 1)) * 100)
@@ -38,25 +32,7 @@ export default function Settings() {
         <p className="text-xs text-gray-400 mt-0.5">Manage preferences, AI key, and track your sustainability impact</p>
       </div>
 
-      {/* Account */}
-      <div className="fresh-card p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <User size={15} className="text-gray-400" />
-          <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">Account</div>
-        </div>
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center text-green-700 font-bold text-xl shadow-xs">
-            {user?.email?.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <div className="font-bold text-gray-900 text-sm">{user?.email}</div>
-            <div className="text-xs text-gray-400 mt-0.5">FreshGuard Active Guardian</div>
-          </div>
-        </div>
-        <button onClick={handleLogout} className="btn-danger w-full flex items-center justify-center gap-2 py-2.5 text-xs">
-          <LogOut size={15} /> Sign Out
-        </button>
-      </div>
+
 
       {/* Impact stats */}
       {statsData && (

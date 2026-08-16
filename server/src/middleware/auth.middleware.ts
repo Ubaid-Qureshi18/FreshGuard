@@ -1,25 +1,26 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyUserJwt } from '../services/db/supabase.service';
 
 export interface AuthRequest extends Request {
   user?: { id: string; email?: string };
   userJwt?: string;
 }
 
-export async function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
+// ── No-auth middleware: always passes through with a guest user ──
+export function requireAuth(req: AuthRequest, _res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Missing or invalid authorization header' });
-    return;
+  const jwt = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+  if (jwt && jwt.startsWith('dev_token_')) {
+    // Extract email from dev token if present
+    const parts = jwt.split('_');
+    const email = parts[2] ? decodeURIComponent(parts[2]) : 'user@freshguard.app';
+    req.user    = { id: '00000000-0000-0000-0000-000000000001', email };
+    req.userJwt = jwt;
+  } else {
+    // No token or real token — use guest identity
+    req.user    = { id: '00000000-0000-0000-0000-000000000001', email: 'user@freshguard.app' };
+    req.userJwt = `dev_token_${Date.now()}_user%40freshguard.app`;
   }
 
-  const jwt = authHeader.slice(7);
-  try {
-    const user = await verifyUserJwt(jwt);
-    req.user    = { id: user.id, email: user.email };
-    req.userJwt = jwt;
-    next();
-  } catch {
-    res.status(401).json({ error: 'Invalid or expired token. Please log in again.' });
-  }
+  next();
 }

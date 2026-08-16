@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { notifications as notifApi } from '../services/api';
 import {
   LayoutDashboard, ShoppingBasket, Camera, Flame,
-  Bell, Settings, LogOut, Sparkles, ChevronRight, X
+  Bell, Settings, Sparkles, ChevronRight, X
 } from 'lucide-react';
 import AIQuickAddModal from './AIQuickAddModal';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,7 +24,6 @@ export function triggerPantryRefresh() {
 }
 
 export default function AppLayout() {
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -50,12 +48,6 @@ export default function AppLayout() {
     const interval = setInterval(checkAlarms, 90000); // every 90s
     return () => clearInterval(interval);
   }, [checkAlarms]);
-
-  const handleLogout = () => {
-    logout();
-    toast.success('Signed out successfully');
-    navigate('/');
-  };
 
   const getPageTitle = () => {
     const p = location.pathname;
@@ -138,20 +130,9 @@ export default function AppLayout() {
           AI Camera Scanner
         </button>
 
-        {/* User Footer */}
-        <div className="border-t border-gray-100 pt-4">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center text-emerald-800 font-black text-xs border border-emerald-200/60">
-              {user?.email?.charAt(0).toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold text-gray-900 truncate">{user?.email}</div>
-              <div className="text-[10px] text-gray-400 font-medium">Active account</div>
-            </div>
-            <button onClick={handleLogout} className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50" title="Sign out">
-              <LogOut size={14} />
-            </button>
-          </div>
+        {/* App branding footer */}
+        <div className="border-t border-gray-100 pt-4 px-2">
+          <div className="text-[10px] text-gray-400 font-medium text-center">FreshGuard · AI-powered kitchen</div>
         </div>
       </aside>
 

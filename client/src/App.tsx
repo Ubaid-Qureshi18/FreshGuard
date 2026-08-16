@@ -1,13 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Suspense, lazy } from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy-load pages for better performance
 const Landing      = lazy(() => import('./pages/Landing'));
-const Login        = lazy(() => import('./pages/Login'));
-const Register     = lazy(() => import('./pages/Register'));
 const Dashboard    = lazy(() => import('./pages/Dashboard'));
 const Pantry       = lazy(() => import('./pages/Pantry'));
 const Scanner      = lazy(() => import('./pages/Scanner'));
@@ -39,19 +37,6 @@ function PageLoader() {
   );
 }
 
-// ── Route Guards ──────────────────────────────────────────
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  if (loading) return <PageLoader />;
-  return user ? <>{children}</> : <Navigate to="/login" replace />;
-}
-
-function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  if (loading) return <PageLoader />;
-  return user ? <Navigate to="/dashboard" replace /> : <>{children}</>;
-}
-
 // ── 404 Page ──────────────────────────────────────────────
 function NotFound() {
   return (
@@ -72,13 +57,15 @@ function AppRoutes() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        {/* Public Routes */}
-        <Route path="/"        element={<PublicRoute><Landing /></PublicRoute>} />
-        <Route path="/login"   element={<PublicRoute><Login /></PublicRoute>} />
-        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+        {/* Landing page */}
+        <Route path="/" element={<Landing />} />
 
-        {/* Protected App Routes */}
-        <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+        {/* Redirect old login/register URLs to dashboard */}
+        <Route path="/login"    element={<Navigate to="/dashboard" replace />} />
+        <Route path="/register" element={<Navigate to="/dashboard" replace />} />
+
+        {/* App routes — no login required */}
+        <Route path="/" element={<AppLayout />}>
           <Route path="dashboard"    element={<Dashboard />} />
           <Route path="pantry"       element={<Pantry />} />
           <Route path="scan"         element={<Scanner />} />
