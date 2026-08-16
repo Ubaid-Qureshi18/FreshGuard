@@ -3,7 +3,9 @@ import { requireAuth, AuthRequest } from '../middleware/auth.middleware';
 import {
   parseNaturalLanguageGroceries,
   getStorageAdvice,
-  generateMealPlan
+  generateMealPlan,
+  auditPantryHealth,
+  getCustomIngredientSwap
 } from '../services/ai/gemini.service';
 import { listUserFoods } from '../services/db/store.service';
 
@@ -63,6 +65,45 @@ router.post('/meal-plan', async (req: AuthRequest, res: Response) => {
     res.json({ plan });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Meal plan generation failed';
+    res.status(500).json({ error: msg });
+  }
+});
+
+// POST /api/ai/pantry-audit — generate AI pantry health & waste prevention audit
+router.post('/pantry-audit', async (req: AuthRequest, res: Response) => {
+  try {
+    const foods = await listUserFoods(req.userJwt!, req.user!.id, 'ACTIVE');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const items = foods.map(f => {
+      const listed = new Date(f.listed_date);
+      listed.setHours(0, 0, 0, 0);
+      const days = Math.round((listed.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      return { name: f.name, category: f.category, days };
+    });
+
+    const audit = await auditPantryHealth(items);
+    res.json(audit);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Pantry audit failed';
+    res.status(500).json({ error: msg });
+  }
+});
+
+// POST /api/ai/custom-swap — ask AI for custom ingredient swaps
+router.post('/custom-swap', async (req: AuthRequest, res: Response) => {
+  const { missingIngredient, recipeName } = req.body;
+  if (!missingIngredient) {
+    res.status(400).json({ error: 'Missing ingredient name is required' });
+    return;
+  }
+
+  try {
+    const swaps = await getCustomIngredientSwap(missingIngredient, recipeName);
+    res.json({ substitutions: swaps });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Swap generation failed';
     res.status(500).json({ error: msg });
   }
 });

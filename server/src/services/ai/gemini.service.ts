@@ -426,3 +426,67 @@ Return ONLY valid JSON:
     }
   ];
 }
+
+// ── 6. AI PANTRY HEALTH AUDIT & CUSTOM INGREDIENT SWAPS ──
+
+export async function auditPantryHealth(items: Array<{ name: string; category: string; days: number }>) {
+  const itemsList = items.map(i => `${i.name} (${i.category}, ${i.days} days left)`).join(', ');
+  const prompt = `You are a clinical food safety and nutrition auditor. Analyze this household pantry inventory:
+Items: ${itemsList || 'Empty pantry'}
+
+Return ONLY valid JSON:
+{
+  "safetyScore": number (1 to 100 overall pantry freshness index),
+  "highRiskItems": ["item names that expire in <= 2 days or past"],
+  "healthyHighlights": ["positive nutritional callouts about current pantry composition"],
+  "auditSummary": "2 sentence executive summary of pantry health and waste prevention status",
+  "actionSteps": ["3 clear, actionable steps for the user today to prevent food waste"]
+}`;
+
+  try {
+    const result = await geminiRequest([{ text: prompt }], 0.3) as Record<string, unknown>;
+    if (result && result.safetyScore) return result;
+  } catch (err) {
+    console.warn('[Gemini Pantry Audit Fallback]', err instanceof Error ? err.message : err);
+  }
+
+  const urgentNames = items.filter(i => i.days <= 2).map(i => i.name);
+  return {
+    safetyScore: items.length > 0 ? (urgentNames.length > 0 ? 78 : 94) : 90,
+    highRiskItems: urgentNames.length > 0 ? urgentNames : ['None — all items fresh'],
+    healthyHighlights: ['Good distribution of fresh produce and staple proteins', 'Low proportion of processed items'],
+    auditSummary: items.length > 0
+      ? `Your pantry has ${items.length} tracked items. ${urgentNames.length > 0 ? `${urgentNames.length} item(s) require prompt consumption.` : 'All items are currently within safe freshness windows.'}`
+      : 'Pantry is ready for fresh grocery input.',
+    actionSteps: [
+      'Prioritize items with 2 days or fewer remaining for dinner tonight',
+      'Portion surplus meats or herbs into freezer-safe containers',
+      'Run AI Recipe Rescue before your next grocery run'
+    ]
+  };
+}
+
+export async function getCustomIngredientSwap(missingIngredient: string, recipeName?: string) {
+  const prompt = `You are an expert chef. Recommend 3 healthy, accessible pantry substitutes for "${missingIngredient}"${recipeName ? ` when cooking "${recipeName}"` : ''}.
+
+Return ONLY valid JSON:
+{
+  "substitutions": [
+    { "name": "Substitute name", "ratio": "e.g. 1:1 replacement", "culinaryTip": "Short tip on how it affects flavor/texture" }
+  ]
+}`;
+
+  try {
+    const result = await geminiRequest([{ text: prompt }], 0.4) as { substitutions?: unknown[] };
+    if (result.substitutions && result.substitutions.length > 0) return result.substitutions;
+  } catch (err) {
+    console.warn('[Gemini Swap Fallback]', err instanceof Error ? err.message : err);
+  }
+
+  return [
+    { name: 'Olive oil or vegetable broth', ratio: '1:1 ratio', culinaryTip: 'Maintains moisture while keeping flavor neutral.' },
+    { name: 'Greek yogurt or coconut cream', ratio: '1:1 ratio', culinaryTip: 'Adds rich creaminess with subtle tang.' },
+    { name: 'Seasoned nutritional yeast', ratio: '1 tbsp per 1/4 cup', culinaryTip: 'Imparts a warm savory umami depth.' }
+  ];
+}
+

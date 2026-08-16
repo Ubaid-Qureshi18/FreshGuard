@@ -71,6 +71,9 @@ export const ai = {
   getStorageAdvice: (foodName: string, category?: string, location?: string) =>
     api.post('/ai/storage-advice', { foodName, category, location }),
   getMealPlan: () => api.post('/ai/meal-plan'),
+  auditPantry: () => api.post('/ai/pantry-audit'),
+  getCustomSwap: (missingIngredient: string, recipeName?: string) =>
+    api.post('/ai/custom-swap', { missingIngredient, recipeName }),
 };
 
 // ── Notifications & Expiry Alarms ─────────────────────────

@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { foods as foodsApi } from '../services/api';
+import { foods as foodsApi, ai as aiApi } from '../services/api';
 import type { FoodItem, FreshnessStatus, StorageLocation } from '../types';
 import { enrichFood, getDaysRemaining } from '../utils/freshness';
 import FoodCard from '../components/FoodCard';
 import toast from 'react-hot-toast';
-import { Search, Plus, Camera, SlidersHorizontal, Copy } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Search, Plus, Camera, Copy, Sparkles, X, ShieldCheck, AlertTriangle, Lightbulb, SlidersHorizontal } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { PANTRY_REFRESH_EVENT } from '../components/AppLayout';
 
 type Tab = 'all' | 'use-soon' | 'coming-soon' | 'fresh' | 'past';
@@ -35,6 +35,14 @@ const sorts: { key: SortKey; label: string }[] = [
   { key: 'date', label: 'Listed Expiry Date' },
 ];
 
+interface AuditResult {
+  safetyScore: number;
+  highRiskItems: string[];
+  healthyHighlights: string[];
+  auditSummary: string;
+  actionSteps: string[];
+}
+
 export default function Pantry() {
   const navigate = useNavigate();
   const [foods, setFoods] = useState<FoodItem[]>([]);
@@ -45,9 +53,13 @@ export default function Pantry() {
   const [search, setSearch] = useState('');
   const [showSort, setShowSort] = useState(false);
 
+  // AI Audit Modal
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditData, setAuditData] = useState<AuditResult | null>(null);
+  const [showAuditModal, setShowAuditModal] = useState(false);
+
   const load = useCallback(async () => {
     try {
-      // Use 'ACTIVE' — the server supports 'ACTIVE', 'CONSUMED', 'DISCARDED', and 'ALL'
       const { data } = await foodsApi.list('ACTIVE');
       setFoods(data);
     } catch { toast.error('Could not load pantry'); }
@@ -56,7 +68,6 @@ export default function Pantry() {
 
   useEffect(() => {
     load();
-    // Refresh pantry when AI Quick Add completes
     const handler = () => load();
     window.addEventListener(PANTRY_REFRESH_EVENT, handler);
     return () => window.removeEventListener(PANTRY_REFRESH_EVENT, handler);
@@ -68,6 +79,20 @@ export default function Pantry() {
       toast.success('Marked as consumed! 🌿');
       load();
     } catch { toast.error('Failed'); }
+  };
+
+  const handleRunAudit = async () => {
+    setAuditLoading(true);
+    try {
+      const { data } = await aiApi.auditPantry();
+      setAuditData(data as AuditResult);
+      setShowAuditModal(true);
+      toast.success('AI Pantry Audit complete! 🛡️');
+    } catch {
+      toast.error('Could not run pantry audit');
+    } finally {
+      setAuditLoading(false);
+    }
   };
 
   const copyPantrySummary = () => {
@@ -123,12 +148,20 @@ export default function Pantry() {
       {/* Top Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Digital Pantry</h1>
-          <p className="text-xs text-gray-400 mt-0.5">Track, organize, and monitor food shelf-life</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Digital Pantry</h1>
+          <p className="text-xs text-gray-400 mt-0.5 font-medium">Track, organize, and monitor food shelf-life</p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={handleRunAudit}
+            disabled={auditLoading}
+            className="btn-secondary text-emerald-800 bg-emerald-50 border-emerald-200/80 hover:bg-emerald-100 flex items-center gap-1.5 text-xs py-2 px-3 font-bold"
+          >
+            <Sparkles size={13} className="text-emerald-700 animate-pulse" />
+            {auditLoading ? 'Auditing…' : 'AI Health Audit'}
+          </button>
           <button onClick={copyPantrySummary} className="btn-secondary flex items-center gap-1 text-xs py-2 px-3" title="Copy Pantry List">
-            <Copy size={13} /> Copy List
+            <Copy size={13} /> Copy
           </button>
           <button onClick={() => navigate('/add')} className="btn-secondary flex items-center gap-1.5 text-xs py-2 px-3 font-semibold">
             <Plus size={14} /> Add
@@ -158,10 +191,10 @@ export default function Pantry() {
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`shrink-0 text-xs font-bold px-3 py-1.5 rounded-full transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                 tab === t.key
-                  ? 'bg-green-600 text-white shadow-xs'
-                  : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
+                  ? 'bg-emerald-800 text-white shadow-xs'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
               }`}
             >
               {t.label}
@@ -169,42 +202,50 @@ export default function Pantry() {
           ))}
         </div>
 
-        {/* Sort button */}
-        <div className="relative ml-2 shrink-0">
-          <button
-            onClick={() => setShowSort(!showSort)}
-            className="btn-ghost flex items-center gap-1 text-xs font-semibold"
-          >
-            <SlidersHorizontal size={13} /> Sort
-          </button>
-          {showSort && (
-            <div className="absolute right-0 top-8 bg-white border border-gray-100 rounded-2xl shadow-xl z-20 py-1.5 min-w-[170px]">
-              {sorts.map(s => (
-                <button
-                  key={s.key}
-                  onClick={() => { setSortKey(s.key); setShowSort(false); }}
-                  className={`w-full text-left px-4 py-2 text-xs font-medium hover:bg-gray-50 transition-colors ${
-                    sortKey === s.key ? 'text-green-600 font-bold bg-green-50/50' : 'text-gray-700'
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Sort Dropdown Toggle */}
+        <button
+          onClick={() => setShowSort(!showSort)}
+          className={`p-2 rounded-xl border text-xs font-bold transition-colors flex items-center gap-1 shrink-0 ${
+            showSort ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-white text-gray-600 border-gray-200'
+          }`}
+          title="Sort Options"
+        >
+          <SlidersHorizontal size={14} />
+        </button>
       </div>
 
-      {/* Storage Location Pills */}
-      <div className="flex gap-1.5 overflow-x-auto pb-3 mb-3 border-b border-gray-100">
+      {/* Expanded Sort Selector */}
+      {showSort && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="bg-white border border-gray-100 rounded-2xl p-3 mb-4 shadow-sm flex flex-wrap gap-2 text-xs"
+        >
+          <span className="text-gray-400 font-bold self-center mr-1">Sort by:</span>
+          {sorts.map(s => (
+            <button
+              key={s.key}
+              onClick={() => { setSortKey(s.key); setShowSort(false); }}
+              className={`px-3 py-1 rounded-xl font-semibold transition-colors ${
+                sortKey === s.key ? 'bg-emerald-800 text-white font-bold' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </motion.div>
+      )}
+
+      {/* Storage Location Filter Pills */}
+      <div className="flex gap-1.5 overflow-x-auto pb-3 mb-2">
         {locationTabs.map(loc => (
           <button
             key={loc.key}
             onClick={() => setLocationFilter(loc.key)}
-            className={`shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-xl transition-all flex items-center gap-1 ${
+            className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold transition-colors flex items-center gap-1 border whitespace-nowrap ${
               locationFilter === loc.key
-                ? 'bg-gray-900 text-white'
-                : 'bg-gray-100/80 text-gray-600 hover:bg-gray-200/80'
+                ? 'bg-emerald-50 text-emerald-900 border-emerald-200 font-bold'
+                : 'bg-white text-gray-500 border-gray-200/80 hover:bg-gray-50'
             }`}
           >
             <span>{loc.icon}</span>
@@ -213,48 +254,114 @@ export default function Pantry() {
         ))}
       </div>
 
-      {/* List */}
+      {/* Food Cards List */}
       {loading ? (
         <div className="space-y-3">
-          {[1,2,3,4].map(i => <div key={i} className="h-20 bg-gray-100 rounded-2xl animate-pulse" />)}
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-[72px] bg-gray-100 rounded-2xl animate-pulse" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-3xl border border-gray-100 shadow-xs">
-          <div className="text-4xl mb-3">📦</div>
-          <div className="font-bold text-gray-700 text-sm mb-1">
-            {search ? 'No matching items found' : tab === 'all' ? 'Your pantry is currently empty' : 'No items in this category'}
-          </div>
-          <p className="text-xs text-gray-400 mb-4">
-            {search ? 'Try adjusting your search query or location filter' : 'Scan packaging or add manually to fill your pantry'}
-          </p>
-          {tab === 'all' && !search && (
-            <div className="flex justify-center gap-2">
-              <button onClick={() => navigate('/scan')} className="btn-primary text-xs">
-                📷 Scan Label
-              </button>
-              <button onClick={() => navigate('/add')} className="btn-secondary text-xs">
-                + Add Item
-              </button>
-            </div>
-          )}
+        <div className="text-center py-14 bg-white rounded-3xl border border-gray-100 shadow-xs">
+          <div className="text-4xl mb-2">🥗</div>
+          <div className="font-bold text-gray-800 text-sm">No items found</div>
+          <p className="text-xs text-gray-400 mt-1 mb-5">Try adjusting search or filter tabs</p>
+          <button onClick={() => navigate('/add')} className="btn-primary text-xs py-2.5 px-4">
+            Add New Groceries
+          </button>
         </div>
       ) : (
         <div className="space-y-2.5">
-          {filtered.map((food, i) => (
-            <motion.div
+          {filtered.map(food => (
+            <FoodCard
               key={food.id}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.03 }}
-            >
-              <FoodCard food={food} onQuickConsume={food.status === 'ACTIVE' ? handleQuickConsume : undefined} />
-            </motion.div>
+              food={food}
+              onQuickConsume={handleQuickConsume}
+            />
           ))}
-          <div className="text-center text-xs text-gray-400 pt-3">
-            Showing {filtered.length} item{filtered.length !== 1 ? 's' : ''} in pantry
-          </div>
         </div>
       )}
+
+      {/* AI Pantry Health Audit Modal */}
+      <AnimatePresence>
+        {showAuditModal && auditData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl border border-gray-100 shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-emerald-50 to-teal-50">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-800 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-emerald-800/20">
+                    🛡️
+                  </div>
+                  <div>
+                    <h2 className="font-bold text-gray-900 text-base">AI Pantry Health Audit</h2>
+                    <p className="text-xs text-gray-500">Clinical food safety & waste prevention report</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowAuditModal(false)} className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto space-y-4 text-xs">
+                {/* Score Banner */}
+                <div className="bg-gradient-to-r from-emerald-800 to-emerald-700 text-white rounded-2xl p-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-wider text-emerald-200">Overall Freshness Index</div>
+                    <div className="text-2xl font-extrabold mt-0.5">{auditData.safetyScore} / 100</div>
+                    <div className="text-xs text-emerald-100 mt-0.5">Pantry status is optimized for safety</div>
+                  </div>
+                  <ShieldCheck size={40} className="text-emerald-300 opacity-80" />
+                </div>
+
+                {/* Summary */}
+                <div className="fresh-card p-3.5 bg-gray-50/70 border border-gray-200/80">
+                  <p className="text-gray-700 leading-relaxed">{auditData.auditSummary}</p>
+                </div>
+
+                {/* High Risk Items */}
+                {auditData.highRiskItems && auditData.highRiskItems.length > 0 && (
+                  <div>
+                    <div className="font-bold text-gray-900 text-xs mb-2 flex items-center gap-1.5 text-rose-700">
+                      <AlertTriangle size={14} /> Attention Needed (Expiring Soon):
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {auditData.highRiskItems.map((item, idx) => (
+                        <span key={idx} className="bg-rose-50 text-rose-800 text-[11px] font-bold px-2.5 py-1 rounded-xl border border-rose-200">
+                          🚨 {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Steps */}
+                <div>
+                  <div className="font-bold text-gray-900 text-xs mb-2 flex items-center gap-1.5 text-emerald-800">
+                    <Lightbulb size={14} className="text-amber-500" /> Actionable Recommendations:
+                  </div>
+                  <div className="space-y-1.5">
+                    {auditData.actionSteps.map((step, idx) => (
+                      <div key={idx} className="flex items-start gap-2 bg-emerald-50/60 p-2.5 rounded-xl border border-emerald-100 text-emerald-950">
+                        <span className="font-bold text-emerald-700 shrink-0">✓</span>
+                        <span className="leading-relaxed">{step}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 border-t border-gray-100 flex justify-end">
+                <button onClick={() => setShowAuditModal(false)} className="btn-primary text-xs py-2 px-5">
+                  Done
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
