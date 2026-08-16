@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { notifications as notifApi, foods as foodsApi } from '../services/api';
 import type { Notification } from '../types';
@@ -12,14 +12,26 @@ import { motion } from 'framer-motion';
 
 type NotifFilter = 'all' | 'urgent' | 'upcoming' | 'unread';
 
+/** Safely extract an array from any API response shape */
+function extractArray<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (data && typeof data === 'object') {
+    const obj = data as Record<string, unknown>;
+    for (const key of ['data', 'notifications', 'items', 'value', 'results']) {
+      if (Array.isArray(obj[key])) return obj[key] as T[];
+    }
+  }
+  return [];
+}
+
 export default function Notifications() {
   const navigate = useNavigate();
   const [items, setItems] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<NotifFilter>('all');
-  const [soundEnabled, setSoundEnabled] = useState(() => {
-    return localStorage.getItem('fg_alarm_sound') !== 'false';
-  });
+  const [soundEnabled, setSoundEnabled] = useState(() =>
+    localStorage.getItem('fg_alarm_sound') !== 'false'
+  );
   const [volume, setVolume] = useState(() => {
     const v = localStorage.getItem('fg_alarm_volume');
     return v ? parseFloat(v) : 0.8;
@@ -27,35 +39,50 @@ export default function Notifications() {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [urgentSummary, setUrgentSummary] = useState<{ urgentCount: number; warningCount: number } | null>(null);
 
-  const load = useCallback(async () => {
+  // Use refs so load() doesn't depend on state and won't loop
+  const soundRef = useRef(soundEnabled);
+  const volumeRef = useRef(volume);
+  soundRef.current = soundEnabled;
+  volumeRef.current = volume;
+
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
-      // 1. Run alarm scanner to refresh latest expiration deltas
-      const { data: alarmStatus } = await notifApi.checkAlarms();
-      setUrgentSummary({
-        urgentCount: alarmStatus.urgentCount || 0,
-        warningCount: alarmStatus.warningCount || 0,
-      });
-
-      // 2. Fetch notifications
-      const { data } = await notifApi.list();
-      setItems(Array.isArray(data) ? data : (Array.isArray(data?.notifications) ? data.notifications : []));
-
-      // Play alert chime if urgent items exist and sound enabled
-      if (soundEnabled && alarmStatus.urgentCount > 0) {
-        soundSynth.playUrgentAlarm(volume);
-        sendBrowserPushNotification(
-          '🚨 Urgent FreshGuard Alarm',
-          `You have ${alarmStatus.urgentCount} food item(s) expiring today! Rescue them before they spoil.`
-        );
+      // 1. Run alarm scanner silently (never show toast on failure)
+      try {
+        const { data: alarmStatus } = await notifApi.checkAlarms();
+        if (alarmStatus && typeof alarmStatus === 'object') {
+          const status = alarmStatus as { urgentCount?: number; warningCount?: number };
+          setUrgentSummary({
+            urgentCount: status.urgentCount || 0,
+            warningCount: status.warningCount || 0,
+          });
+          if (soundRef.current && (status.urgentCount || 0) > 0) {
+            soundSynth.playUrgentAlarm(volumeRef.current);
+            sendBrowserPushNotification(
+              '🚨 Urgent FreshGuard Alarm',
+              `You have ${status.urgentCount} food item(s) expiring today!`
+            );
+          }
+        }
+      } catch (err) {
+        console.warn('[Notifications] check-alarms silent fail:', err);
       }
-    } catch {
-      toast.error('Could not load notifications');
+
+      // 2. Fetch notifications list
+      const { data } = await notifApi.list();
+      setItems(extractArray<Notification>(data));
+    } catch (err) {
+      console.warn('[Notifications] load failed:', err);
+      // Use toast id to prevent duplicate toasts
+      if (!silent) toast.error('Could not load notifications', { id: 'notif-load-error' });
     } finally {
       setLoading(false);
     }
-  }, [soundEnabled, volume]);
+  };
 
-  useEffect(() => { load(); }, [load]);
+  // Only fire once on mount — no dependency array loop
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleVolumeChange = (newVol: number) => {
     setVolume(newVol);

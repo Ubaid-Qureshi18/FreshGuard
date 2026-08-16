@@ -318,10 +318,11 @@ export async function listUserNotifications(userJwt: string, userId: string): Pr
   try {
     const db = supabaseForUser(userJwt);
     const { data, error } = await db.from('notifications').select('*, food_items(name, category, listed_date, storage_location)').eq('user_id', userId).order('created_at', { ascending: false });
-    if (!error && data) return data as NotificationRecord[];
+    if (!error && data && data.length > 0) return data as NotificationRecord[];
   } catch {}
 
-  return memoryNotifications.filter(n => n.user_id === userId);
+  // Memory fallback — return all notifications (single guest user)
+  return [...memoryNotifications];
 }
 
 export async function addNotification(userJwt: string, userId: string, notif: Partial<NotificationRecord>) {
