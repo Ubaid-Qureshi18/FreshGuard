@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { foods as foodsApi, stats as statsApi } from '../services/api';
 import type { FoodItem } from '../types';
 import { enrichFood, sortByUrgency, formatQuantity, formatDate } from '../utils/freshness';
+import { getFoodImageUrl } from '../utils/foodData';
 import toast from 'react-hot-toast';
 import { Plus, Camera, Flame, ChevronRight, Sparkles, Utensils, Activity, Eye, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -213,8 +214,14 @@ export default function Dashboard() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-2xl bg-gray-100 flex items-center justify-center text-2xl shrink-0">
-                      {food.emoji}
+                    <div className="w-11 h-11 rounded-2xl overflow-hidden shrink-0 bg-gray-100">
+                      <img
+                        src={food.image_url || getFoodImageUrl(food.name, food.category)}
+                        alt={food.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1543362906-acfc16c67564?w=200&q=70&auto=format'; }}
+                      />
                     </div>
                     <div>
                       <div className="font-bold text-gray-900 text-sm">{food.name}</div>

@@ -225,8 +225,23 @@
   .form-select:focus { border-color: #144e39; box-shadow: 0 0 0 3px rgba(20,78,57,0.1); }
 
   /* ── Utility ─────────────────────────────────────────────  */
-  .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0.5rem); }
+  .pb-safe { padding-bottom: max(env(safe-area-inset-bottom, 0.5rem), 0.75rem); }
+  .pt-safe { padding-top: max(env(safe-area-inset-top, 0px), 0px); }
   .shadow-xs { box-shadow: var(--shadow-xs); }
+
+  /* ── Food Image ─────────────────────────────────────────── */
+  .img-food {
+    object-fit: cover;
+    object-position: center;
+    background: #f1f5f9;
+  }
+
+  /* ── Mobile-safe max-width ────────────────────────────────  */
+  .content-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
 
   /* ── Skeleton Pulse ─────────────────────────────────────── */
   @keyframes skeleton-pulse {
@@ -241,4 +256,19 @@
     to   { opacity: 1; transform: translateY(0); }
   }
   .page-enter { animation: page-in 0.25s ease-out forwards; }
+
+  /* ── Nutrient Bar ─────────────────────────────────────────  */
+  .nutrient-bar-fill {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.4s ease;
+  }
+
+  /* ── Truncate helpers ─────────────────────────────────────  */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 }

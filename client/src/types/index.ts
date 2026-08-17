@@ -16,13 +16,38 @@ export type DiscardReason = 'Spoiled' | 'Forgot' | 'Bought too much' | "Didn't l
 
 export interface NutritionData {
   servingSize?: string;
+  // Macros
   calories?: number;
   protein?: number;
   carbs?: number;
   fat?: number;
   fiber?: number;
   sugar?: number;
+  saturatedFat?: number;
   sodium?: number;
+  // Micronutrients (mg unless noted)
+  vitaminA?: number;   // mcg RAE
+  vitaminC?: number;   // mg
+  vitaminD?: number;   // mcg
+  vitaminE?: number;   // mg
+  vitaminK?: number;   // mcg
+  vitaminB1?: number;  // mg Thiamine
+  vitaminB2?: number;  // mg Riboflavin
+  vitaminB3?: number;  // mg Niacin
+  vitaminB5?: number;  // mg Pantothenic Acid
+  vitaminB6?: number;  // mg
+  vitaminB9?: number;  // mcg Folate
+  vitaminB12?: number; // mcg
+  calcium?: number;    // mg
+  iron?: number;       // mg
+  magnesium?: number;  // mg
+  phosphorus?: number; // mg
+  potassium?: number;  // mg
+  zinc?: number;       // mg
+  copper?: number;     // mg
+  manganese?: number;  // mg
+  selenium?: number;   // mcg
+  estimated?: boolean; // true if AI-estimated
 }
 
 export interface FoodItem {

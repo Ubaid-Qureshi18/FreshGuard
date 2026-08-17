@@ -1,5 +1,6 @@
 import axios from 'axios';
-import type { Recipe } from '../types';
+import type { FoodCategory, Recipe } from '../types';
+import { getFoodNutrition } from '../utils/foodData';
 import {
   getLocalFoods,
   addLocalFood,
@@ -53,24 +54,34 @@ export const auth = {
     api.post('/auth/login', { email, password }),
 };
 
+// ── Nutrition injection helper ─────────────────────────────
+function injectNutrition<T extends { name?: string; category?: string; nutrition?: unknown }>(item: T): T {
+  if (!item.nutrition) {
+    const nutr = getFoodNutrition(item.name || '', (item.category || 'Other') as FoodCategory);
+    if (nutr) return { ...item, nutrition: nutr };
+  }
+  return item;
+}
+
 // ── Foods ─────────────────────────────────────────────────
 export const foods = {
   list: async (status = 'ACTIVE') => {
     try {
       const res = await api.get(`/foods?status=${status}`);
       if (res.data && (Array.isArray(res.data) || Array.isArray(res.data?.foods))) {
-        return res;
+        const arr = Array.isArray(res.data) ? res.data : res.data.foods;
+        return { ...res, data: arr.map(injectNutrition) };
       }
     } catch {}
     const local = getLocalFoods();
-    const filtered = local.filter(f => (status === 'ALL' || f.status === status));
+    const filtered = local.filter(f => (status === 'ALL' || f.status === status)).map(injectNutrition);
     return { data: filtered };
   },
 
   get: async (id: string) => {
     try {
       const res = await api.get(`/foods/${id}`);
-      if (res.data) return res;
+      if (res.data) return { ...res, data: injectNutrition(res.data) };
     } catch {}
     const foodsList = getLocalFoods();
     let local = foodsList.find(f => f.id === id);
@@ -82,27 +93,37 @@ export const foods = {
       );
     }
     if (!local) {
+      // Construct a safe fallback — all required fields always populated
+      const safeName = String(id || '')
+        .replace(/^demo-|^f-demo-/, '')
+        .replace(/-/g, ' ')
+        .replace(/^(.)/, str => str.toUpperCase()) || 'Unknown Item';
       local = {
         id,
         user_id: '00000000-0000-0000-0000-000000000001',
-        name: id.replace(/^demo-|^f-demo-/, '').replace(/^./, str => str.toUpperCase()),
-        category: 'Vegetables',
+        name: safeName,
+        category: 'Other' as FoodCategory,
         quantity: 1,
         unit: 'pack',
-        date_type: 'BEST_BEFORE',
-        listed_date: new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10),
+        date_type: 'BEST_BEFORE' as const,
+        listed_date: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10),
         image_url: null,
-        status: 'ACTIVE',
+        status: 'ACTIVE' as const,
         notification_enabled: true,
-        storage_location: 'FRIDGE',
-        storage_tip: 'Store on main fridge shelf or in crisper drawer.',
+        storage_location: 'FRIDGE' as const,
+        storage_tip: 'Store in a cool, dry place.',
+        notes: null,
+        nutrition: null,
+        health_score: null,
+        health_tags: null,
+        allergens: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         consumed_at: null,
         discarded_at: null,
       };
     }
-    return { data: local };
+    return { data: injectNutrition(local) };
   },
 
   add: async (data: Record<string, unknown>) => {

@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { foods as foodsApi, ai as aiApi } from '../services/api';
 import type { FoodItem, StorageLocation } from '../types';
-import { enrichFood } from '../utils/freshness';
-import FoodCard from '../components/FoodCard';
+import { enrichFood, formatQuantity, getStatusCss, getCountdown } from '../utils/freshness';
+import { getFoodImageUrl } from '../utils/foodData';
 import toast from 'react-hot-toast';
 import { Search, Plus, Camera, Copy, Sparkles, X, ShieldCheck, AlertTriangle, Lightbulb, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -259,10 +259,10 @@ export default function Pantry() {
         ))}
       </div>
 
-      {/* Food Cards List */}
+      {/* Food Grid — list on mobile, 2-col on tablet+ */}
       {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-[72px] bg-gray-100 rounded-2xl animate-pulse" />)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-[100px] bg-gray-100 rounded-2xl animate-pulse" />)}
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-14 bg-white rounded-3xl border border-gray-100 shadow-xs">
@@ -274,14 +274,62 @@ export default function Pantry() {
           </button>
         </div>
       ) : (
-        <div className="space-y-2.5">
-          {filtered.map(food => (
-            <FoodCard
-              key={food.id}
-              food={food}
-              onQuickConsume={handleQuickConsume}
-            />
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {filtered.map(food => {
+            const imgUrl = food.image_url || getFoodImageUrl(food.name, food.category);
+            const statusCss = getStatusCss(food.freshnessStatus);
+            return (
+              <motion.div
+                key={food.id}
+                layout
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="fresh-card flex items-center gap-3 p-3.5 cursor-pointer group"
+                onClick={() => navigate(`/food/${food.id}`)}
+              >
+                {/* Food image */}
+                <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0 bg-gray-100">
+                  <img
+                    src={imgUrl}
+                    alt={food.name}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const t = e.currentTarget;
+                      t.onerror = null;
+                      t.src = 'https://images.unsplash.com/photo-1543362906-acfc16c67564?w=200&q=70&auto=format';
+                    }}
+                  />
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-sm text-gray-900 truncate group-hover:text-emerald-800 transition-colors">
+                    {food.name}
+                  </div>
+                  <div className="text-[11px] text-gray-500 font-medium mt-0.5 truncate">
+                    {formatQuantity(food) || '1 pack'} · {food.category}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusCss}`}>
+                      {food.statusLabel}
+                    </span>
+                    <span className="text-[10px] text-gray-400">{getCountdown(food.daysRemaining)}</span>
+                  </div>
+                </div>
+
+                {/* Quick consume */}
+                {food.freshnessStatus !== 'fresh' && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleQuickConsume(food.id); }}
+                    className="text-[11px] text-emerald-800 bg-emerald-50 hover:bg-emerald-100 font-bold px-2.5 py-1 rounded-xl transition-colors border border-emerald-200 shrink-0"
+                  >
+                    ✓
+                  </button>
+                )}
+              </motion.div>
+            );
+          })}
         </div>
       )}
 
