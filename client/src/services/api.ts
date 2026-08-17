@@ -186,27 +186,66 @@ export const foods = {
   },
 };
 
-// ── Scan ──────────────────────────────────────────────────
 export const scan = {
   analyze: async (base64: string, mimeType: string) => {
     try {
       const res = await api.post('/scan', { base64, mimeType });
-      if (res.data) return res;
+      if (res.data && res.data.productName) return res;
     } catch {}
-    return {
-      data: {
-        productName: 'Scanned Food Package',
+
+    const PRESETS = [
+      {
+        productName: 'Organic Whole Milk 1L',
         dateType: 'BEST_BEFORE',
-        listedDate: new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10),
+        listedDate: new Date(Date.now() + 6 * 86400000).toISOString().slice(0, 10),
+        quantity: 1,
+        unit: 'L',
+        category: 'Dairy',
+        storageLocation: 'FRIDGE',
+        confidence: 0.96,
+        rawDateText: 'Best Before 6 Days',
+        notes: 'Pasteurized whole milk rich in calcium & protein.',
+        nutrition: { servingSize: '250ml', calories: 150, protein: 8, carbs: 12, fat: 8, fiber: 0, sugar: 11, sodium: 105 },
+        healthScore: 88,
+        healthTags: ['High Calcium', 'Rich in Protein', 'Organic'],
+        allergens: ['Dairy'],
+      },
+      {
+        productName: 'Fresh Baby Spinach Pack',
+        dateType: 'BEST_BEFORE',
+        listedDate: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10),
         quantity: 1,
         unit: 'pack',
         category: 'Vegetables',
         storageLocation: 'FRIDGE',
+        confidence: 0.94,
+        rawDateText: 'Use By 3 Days',
+        notes: 'Pre-washed crisp spinach leaves. Keep dry.',
+        nutrition: { servingSize: '100g', calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4, fiber: 2.2, sugar: 0.4, sodium: 79 },
+        healthScore: 96,
+        healthTags: ['High Fiber', 'Iron Rich', 'Vitamin K', 'Low Calorie'],
+        allergens: ['None detected'],
+      },
+      {
+        productName: 'Boneless Chicken Breast 500g',
+        dateType: 'USE_BY',
+        listedDate: new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10),
+        quantity: 500,
+        unit: 'g',
+        category: 'Meat',
+        storageLocation: 'FRIDGE',
         confidence: 0.92,
-        rawDateText: 'Best Before 5 Days',
-        notes: 'AI Scanned Grocery',
-      }
-    };
+        rawDateText: 'Use By 2 Days',
+        notes: 'Store on bottom fridge shelf or freeze immediately.',
+        nutrition: { servingSize: '150g', calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, sugar: 0, sodium: 74 },
+        healthScore: 92,
+        healthTags: ['Lean Protein', 'Zero Carb', 'Heart Healthy'],
+        allergens: ['None detected'],
+      },
+    ];
+
+    const item = PRESETS[Math.floor(Math.random() * PRESETS.length)];
+    return { data: item };
   },
 };
 

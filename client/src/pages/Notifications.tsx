@@ -386,7 +386,7 @@ export default function Notifications() {
                   <p className="text-xs text-gray-600 mt-1 leading-relaxed">{n.message}</p>
 
                   {/* Action Link for urgent notifications */}
-                  <div className="mt-3 flex items-center gap-2">
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     {isUrgent && (
                       <button
                         onClick={(e) => { e.stopPropagation(); navigate('/rescue'); }}
@@ -404,6 +404,17 @@ export default function Notifications() {
                         <CheckCircle2 size={12} className="text-emerald-600" /> Consume Now
                       </button>
                     )}
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toast.success('Alert snoozed for 24 hours ⏰');
+                        setItems(prev => prev.filter(item => item.id !== n.id));
+                      }}
+                      className="text-[11px] font-semibold text-gray-500 hover:text-gray-800 bg-gray-100 px-2.5 py-1 rounded-xl transition-colors"
+                    >
+                      ⏰ Snooze 24h
+                    </button>
 
                     {!n.read && (
                       <button

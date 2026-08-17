@@ -24,6 +24,7 @@ export default function RecipeDetails() {
   const recipe = lastRecipes[parseInt(idx || '0', 10)];
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
   const [selectedSubIng, setSelectedSubIng] = useState<string | null>(null);
+  const [servings, setServings] = useState(recipe?.servings || 2);
 
   if (!recipe) {
     return (
@@ -100,7 +101,21 @@ export default function RecipeDetails() {
           <div className="w-px h-6 bg-gray-200" />
           <div>
             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Servings</div>
-            <div className="font-bold text-gray-800 mt-0.5">{recipe.servings} portions</div>
+            <div className="flex items-center gap-1.5 mt-0.5 font-bold text-gray-800">
+              <button
+                onClick={() => setServings(s => Math.max(1, s - 1))}
+                className="w-5 h-5 rounded-md bg-gray-100 text-gray-700 flex items-center justify-center text-xs hover:bg-gray-200"
+              >
+                -
+              </button>
+              <span>{servings}</span>
+              <button
+                onClick={() => setServings(s => s + 1)}
+                className="w-5 h-5 rounded-md bg-gray-100 text-gray-700 flex items-center justify-center text-xs hover:bg-gray-200"
+              >
+                +
+              </button>
+            </div>
           </div>
           <div className="w-px h-6 bg-gray-200" />
           <div>

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Suspense, lazy } from 'react';
 import { AuthProvider } from './context/AuthContext';
@@ -6,6 +6,8 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy-load pages for better performance
 const Landing      = lazy(() => import('./pages/Landing'));
+const Login        = lazy(() => import('./pages/Login'));
+const Register     = lazy(() => import('./pages/Register'));
 const Dashboard    = lazy(() => import('./pages/Dashboard'));
 const Pantry       = lazy(() => import('./pages/Pantry'));
 const Scanner      = lazy(() => import('./pages/Scanner'));
@@ -14,6 +16,7 @@ const FoodDetails  = lazy(() => import('./pages/FoodDetails'));
 const Rescue       = lazy(() => import('./pages/Rescue'));
 const RecipeDetails = lazy(() => import('./pages/RecipeDetails'));
 const Notifications = lazy(() => import('./pages/Notifications'));
+const ShoppingList  = lazy(() => import('./pages/ShoppingList'));
 const Settings     = lazy(() => import('./pages/Settings'));
 const AppLayout    = lazy(() => import('./components/AppLayout'));
 
@@ -60,9 +63,9 @@ function AppRoutes() {
         {/* Landing page */}
         <Route path="/" element={<Landing />} />
 
-        {/* Redirect old login/register URLs to dashboard */}
-        <Route path="/login"    element={<Navigate to="/dashboard" replace />} />
-        <Route path="/register" element={<Navigate to="/dashboard" replace />} />
+        {/* Auth routes */}
+        <Route path="/login"    element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
         {/* App routes — no login required */}
         <Route path="/" element={<AppLayout />}>
@@ -74,6 +77,7 @@ function AppRoutes() {
           <Route path="rescue"       element={<Rescue />} />
           <Route path="recipe/:idx"  element={<RecipeDetails />} />
           <Route path="notifications" element={<Notifications />} />
+          <Route path="shopping"     element={<ShoppingList />} />
           <Route path="settings"     element={<Settings />} />
         </Route>
 

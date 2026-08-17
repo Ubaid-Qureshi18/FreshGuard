@@ -53,6 +53,8 @@ export default function Landing() {
             <span className="font-bold text-gray-900 text-lg">FreshGuard</span>
           </div>
           <div className="flex items-center gap-3">
+            <button onClick={() => navigate('/login')} className="btn-secondary text-sm px-3.5 py-1.5">Sign In</button>
+            <button onClick={() => navigate('/register')} className="btn-secondary text-sm px-3.5 py-1.5">Sign Up</button>
             <button onClick={() => navigate('/dashboard')} className="btn-primary text-sm">Open App →</button>
           </div>
         </div>

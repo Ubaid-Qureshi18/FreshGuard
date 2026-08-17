@@ -3,9 +3,10 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { notifications as notifApi } from '../services/api';
 import {
   LayoutDashboard, ShoppingBasket, Camera, Flame,
-  Bell, Settings, Sparkles, ChevronRight, X
+  Bell, Settings, Sparkles, ChevronRight, X, ShoppingCart
 } from 'lucide-react';
 import AIQuickAddModal from './AIQuickAddModal';
+import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -13,6 +14,7 @@ const navItems = [
   { to: '/dashboard',      icon: LayoutDashboard,  label: 'Dashboard',    emoji: '🏠' },
   { to: '/pantry',         icon: ShoppingBasket,   label: 'Pantry',       emoji: '🧺' },
   { to: '/rescue',         icon: Flame,            label: 'Recipes',      emoji: '🍳' },
+  { to: '/shopping',       icon: ShoppingCart,     label: 'Shopping',     emoji: '🛒' },
   { to: '/notifications',  icon: Bell,             label: 'Alerts',       emoji: '🔔' },
   { to: '/settings',       icon: Settings,         label: 'Settings',     emoji: '⚙️' },
 ];
@@ -26,6 +28,7 @@ export function triggerPantryRefresh() {
 export default function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [urgentCount, setUrgentCount] = useState(0);
   const [alarmBanner, setAlarmBanner] = useState<{ urgentFoods: { name: string }[] } | null>(null);
@@ -130,9 +133,22 @@ export default function AppLayout() {
           AI Camera Scanner
         </button>
 
-        {/* App branding footer */}
-        <div className="border-t border-gray-100 pt-4 px-2">
-          <div className="text-[10px] text-gray-400 font-medium text-center">FreshGuard · AI-powered kitchen</div>
+        {/* App branding footer & user profile */}
+        <div className="border-t border-gray-100 pt-4 px-2 space-y-2">
+          {user && (
+            <div className="flex items-center justify-between bg-gray-50 p-2 rounded-xl text-xs border border-gray-100">
+              <div className="flex items-center gap-2 truncate">
+                <div className="w-6 h-6 rounded-full bg-emerald-800 text-white font-bold flex items-center justify-center text-[10px] shrink-0">
+                  {user.name ? user.name[0].toUpperCase() : 'U'}
+                </div>
+                <span className="font-semibold text-gray-700 truncate text-[11px]">{user.name || user.email}</span>
+              </div>
+              <button onClick={() => { logout(); navigate('/login'); }} className="text-[10px] text-gray-400 hover:text-red-500 font-bold ml-1 shrink-0">
+                Logout
+              </button>
+            </div>
+          )}
+          <div className="text-[10px] text-gray-400 font-medium text-center">FreshGuard · AI Kitchen</div>
         </div>
       </aside>
 
