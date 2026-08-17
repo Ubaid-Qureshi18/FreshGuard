@@ -1,17 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getLocalStats, getLocalFoods } from '../services/localStore';
 import type { FoodItem } from '../types';
 import { Sparkles, PieChart, Activity } from 'lucide-react';
+import { PANTRY_REFRESH_EVENT } from '../components/AppLayout';
 
 export default function Insights() {
   const [stats, setStats] = useState(() => getLocalStats());
   const [foods, setFoods] = useState<FoodItem[]>(() => getLocalFoods());
   const [currencySymbol] = useState('₹');
 
-  useEffect(() => {
+  const refreshData = useCallback(() => {
     setStats(getLocalStats());
     setFoods(getLocalFoods());
   }, []);
+
+  useEffect(() => {
+    refreshData();
+    window.addEventListener(PANTRY_REFRESH_EVENT, refreshData);
+    return () => window.removeEventListener(PANTRY_REFRESH_EVENT, refreshData);
+  }, [refreshData]);
 
   const discardedFoods = foods.filter(f => f.status === 'DISCARDED');
   const consumedFoods = foods.filter(f => f.status === 'CONSUMED');

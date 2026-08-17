@@ -238,19 +238,18 @@ export default function Scanner() {
 
     setPhase('saving');
     try {
-      for (const item of selected) {
-        await foodsApi.create({
-          name: item.name,
-          category: item.category,
-          quantity: item.quantity,
-          unit: item.unit,
-          date_type: 'BEST_BEFORE',
-          listed_date: item.estimatedDate,
-          purchase_price: item.price || null,
-          source: 'RECEIPT',
-          storage_location: 'FRIDGE',
-        });
-      }
+      const itemsToCreate = selected.map(item => ({
+        name: item.name,
+        category: item.category,
+        quantity: item.quantity,
+        unit: item.unit,
+        date_type: 'BEST_BEFORE',
+        listed_date: item.estimatedDate,
+        purchase_price: item.price || null,
+        source: 'RECEIPT',
+        storage_location: 'FRIDGE',
+      }));
+      await foodsApi.batchAdd(itemsToCreate);
       toast.success(`Added ${selected.length} items from receipt to pantry! 🛒`);
       navigate('/pantry');
     } catch {

@@ -142,6 +142,9 @@ export function getLocalFoods(): FoodItem[] {
 export function saveLocalFoods(items: FoodItem[]) {
   try {
     localStorage.setItem(PANTRY_KEY, JSON.stringify(items));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('freshguard:pantry-refresh'));
+    }
   } catch {}
 }
 

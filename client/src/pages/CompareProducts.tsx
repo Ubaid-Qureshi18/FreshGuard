@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles, Scale } from 'lucide-react';
+import { getLocalFoods } from '../services/localStore';
+import { getFoodNutrition } from '../utils/foodData';
+import type { FoodCategory } from '../types';
 
 interface ProductItem {
   name: string;
@@ -21,8 +24,33 @@ const PRESET_PRODUCTS: ProductItem[] = [
 ];
 
 export default function CompareProducts() {
+  const [productList, setProductList] = useState<ProductItem[]>(PRESET_PRODUCTS);
   const [prodA, setProdA] = useState<ProductItem>(PRESET_PRODUCTS[0]);
   const [prodB, setProdB] = useState<ProductItem>(PRESET_PRODUCTS[1]);
+
+  useEffect(() => {
+    try {
+      const local = getLocalFoods();
+      const pantryProducts: ProductItem[] = local.map(f => {
+        const nutr = f.nutrition || getFoodNutrition(f.name, (f.category || 'Other') as FoodCategory);
+        return {
+          name: f.name,
+          brand: 'My Pantry (' + f.category + ')',
+          calories: nutr?.calories || 100,
+          protein: nutr?.protein || 4,
+          carbs: nutr?.carbs || 12,
+          fat: nutr?.fat || 2,
+          sugar: nutr?.sugar || 3,
+          fiber: nutr?.fiber || 2,
+        };
+      });
+      // Deduplicate by name
+      const map = new Map<string, ProductItem>();
+      [...pantryProducts, ...PRESET_PRODUCTS].forEach(p => map.set(p.name, p));
+      const merged = Array.from(map.values());
+      setProductList(merged);
+    } catch {}
+  }, []);
 
   const getWinnerRecommendation = () => {
     if (prodA.protein > prodB.protein && prodA.sugar <= prodB.sugar) {
@@ -56,12 +84,12 @@ export default function CompareProducts() {
           <select
             value={prodA.name}
             onChange={e => {
-              const found = PRESET_PRODUCTS.find(p => p.name === e.target.value);
+              const found = productList.find(p => p.name === e.target.value);
               if (found) setProdA(found);
             }}
             className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-900 outline-none"
           >
-            {PRESET_PRODUCTS.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+            {productList.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
           </select>
           <div className="text-[10px] text-gray-400 font-medium">Brand: {prodA.brand}</div>
         </div>
@@ -72,12 +100,12 @@ export default function CompareProducts() {
           <select
             value={prodB.name}
             onChange={e => {
-              const found = PRESET_PRODUCTS.find(p => p.name === e.target.value);
+              const found = productList.find(p => p.name === e.target.value);
               if (found) setProdB(found);
             }}
             className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-900 outline-none"
           >
-            {PRESET_PRODUCTS.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+            {productList.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
           </select>
           <div className="text-[10px] text-gray-400 font-medium">Brand: {prodB.brand}</div>
         </div>
