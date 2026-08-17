@@ -1,8 +1,15 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 
-export interface AuthRequest extends Request {
+export interface AuthRequest<
+  P = Record<string, any>,
+  ResBody = any,
+  ReqBody = any,
+  ReqQuery = Record<string, any>
+> extends Request<P, ResBody, ReqBody, ReqQuery> {
   user?: { id: string; email?: string };
   userJwt?: string;
+  file?: any;
+  files?: any;
 }
 
 // ── No-auth middleware: always passes through with a guest user ──
