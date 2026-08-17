@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { Recipe } from '../types';
 import {
   getLocalFoods,
   addLocalFood,
@@ -10,6 +11,7 @@ import {
   getLocalStats,
   getLocalNotifications,
   generateLocalRecipes,
+  executeCookRecipe,
 } from './localStore';
 
 const GUEST_TOKEN = `dev_token_guest_user%40freshguard.app`;
@@ -104,6 +106,18 @@ export const foods = {
   },
 
   add: async (data: Record<string, unknown>) => {
+    try {
+      const res = await api.post('/foods', data);
+      if (res.data) {
+        addLocalFood(res.data);
+        return res;
+      }
+    } catch {}
+    const created = addLocalFood(data);
+    return { data: created };
+  },
+
+  create: async (data: Record<string, unknown>) => {
     try {
       const res = await api.post('/foods', data);
       if (res.data) {
@@ -257,6 +271,9 @@ export const recipes = {
       if (res.data?.recipes) return res;
     } catch {}
     return { data: { recipes: generateLocalRecipes(selectedIngredientIds) } };
+  },
+  cook: (recipe: Recipe) => {
+    return executeCookRecipe(recipe);
   },
 };
 

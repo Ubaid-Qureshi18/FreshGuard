@@ -1,22 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { foods as foodsApi, ai as aiApi } from '../services/api';
-import type { FoodItem, FreshnessStatus, StorageLocation } from '../types';
-import { enrichFood, getDaysRemaining } from '../utils/freshness';
+import type { FoodItem, StorageLocation } from '../types';
+import { enrichFood } from '../utils/freshness';
 import FoodCard from '../components/FoodCard';
 import toast from 'react-hot-toast';
 import { Search, Plus, Camera, Copy, Sparkles, X, ShieldCheck, AlertTriangle, Lightbulb, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PANTRY_REFRESH_EVENT } from '../components/AppLayout';
 
-type Tab = 'all' | 'use-soon' | 'coming-soon' | 'fresh' | 'past';
+type Tab = 'all' | 'use-first' | 'use-soon' | 'fresh' | 'past';
 
 const tabs: { key: Tab; label: string }[] = [
-  { key: 'all', label: 'All Items' },
-  { key: 'use-soon', label: '⚠️ Use Soon' },
-  { key: 'coming-soon', label: 'Coming Soon' },
-  { key: 'fresh', label: '🌿 Fresh' },
-  { key: 'past', label: 'Past Date' },
+  { key: 'all', label: 'ALL' },
+  { key: 'use-first', label: '🔥 USE FIRST' },
+  { key: 'use-soon', label: '🟠 USE SOON' },
+  { key: 'fresh', label: '🟢 FRESH' },
+  { key: 'past', label: '⚪ PAST DATE' },
 ];
 
 const locationTabs: { key: 'ALL' | StorageLocation; label: string; icon: string }[] = [
@@ -114,16 +114,16 @@ export default function Pantry() {
   const enriched = safeFoods.map(f => ({ ...enrichFood(f), _created: f.created_at }));
 
   // Status Filter
-  const statusFilterMap: Record<Tab, FreshnessStatus[]> = {
-    'all': [],
-    'use-soon': ['use-soon', 'today'],
-    'coming-soon': ['coming-soon'],
-    'fresh': ['fresh'],
-    'past': ['past'],
-  };
-
-  let filtered = tab === 'all' ? enriched : enriched.filter(f => statusFilterMap[tab].includes(f.freshnessStatus));
-  if (tab !== 'all') filtered = filtered.filter(f => f.status === 'ACTIVE');
+  let filtered = enriched;
+  if (tab === 'use-first') {
+    filtered = enriched.filter(f => f.priorityScore >= 70 || f.daysRemaining <= 1);
+  } else if (tab === 'use-soon') {
+    filtered = enriched.filter(f => f.daysRemaining >= 2 && f.daysRemaining <= 3);
+  } else if (tab === 'fresh') {
+    filtered = enriched.filter(f => f.daysRemaining > 3);
+  } else if (tab === 'past') {
+    filtered = enriched.filter(f => f.daysRemaining < 0);
+  }
 
   // Storage Location Filter
   if (locationFilter !== 'ALL') {
@@ -141,7 +141,7 @@ export default function Pantry() {
 
   // Sort
   filtered = [...filtered].sort((a, b) => {
-    if (sortKey === 'urgent') return getDaysRemaining(a.listed_date) - getDaysRemaining(b.listed_date);
+    if (sortKey === 'urgent') return b.priorityScore - a.priorityScore || a.daysRemaining - b.daysRemaining;
     if (sortKey === 'recent') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     if (sortKey === 'name') return a.name.localeCompare(b.name);
     if (sortKey === 'date') return new Date(a.listed_date).getTime() - new Date(b.listed_date).getTime();

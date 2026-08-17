@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { lastRecipes } from './Rescue';
+import { recipes as recipesApi } from '../services/api';
 import { soundSynth } from '../utils/audioAlarm';
 import { CheckCircle, Sparkles, ChefHat, Flame, ArrowRightLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -303,6 +304,21 @@ export default function RecipeDetails() {
             <div className="text-emerald-700 text-xs mt-0.5">You rescued ingredients from being wasted. Bon appétit! 🌿</div>
           </motion.div>
         )}
+      </div>
+
+      {/* COOK THIS MEAL ACTION BAR */}
+      <div className="pt-2">
+        <button
+          onClick={() => {
+            const res = recipesApi.cook(recipe);
+            soundSynth.playSuccessChime(0.9);
+            toast.success(`🎉 Meal cooked! Rescued ${res.itemsUpdated.length || 1} pantry items!`);
+            navigate('/pantry');
+          }}
+          className="w-full py-4 bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-emerald-800/25 hover:from-emerald-900 hover:to-emerald-800 transition-all flex items-center justify-center gap-2"
+        >
+          <ChefHat size={18} /> COOK THIS MEAL & DEDUCT PANTRY
+        </button>
       </div>
     </div>
   );

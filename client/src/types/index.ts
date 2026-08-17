@@ -3,11 +3,16 @@
 export type DateType = 'BEST_BEFORE' | 'USE_BY' | 'EXPIRY';
 export type FoodStatus = 'ACTIVE' | 'CONSUMED' | 'DISCARDED';
 export type StorageLocation = 'FRIDGE' | 'FREEZER' | 'PANTRY' | 'COUNTER';
+export type FoodSource = 'MANUAL' | 'SCAN' | 'RECEIPT' | 'BARCODE';
 
 export type FoodCategory =
   | 'Dairy' | 'Meat' | 'Seafood' | 'Vegetables' | 'Fruits'
   | 'Bread' | 'Beverages' | 'Condiments' | 'Snacks' | 'Frozen'
   | 'Eggs' | 'Grains' | 'Leftovers' | 'Other';
+
+export type PriorityLevel = '🔥 USE NOW' | '🟠 USE SOON' | '🟡 COMING UP' | '🟢 FRESH' | '⚪ PAST LISTED DATE';
+
+export type DiscardReason = 'Spoiled' | 'Forgot' | 'Bought too much' | "Didn't like it" | 'Other';
 
 export interface NutritionData {
   servingSize?: string;
@@ -29,6 +34,9 @@ export interface FoodItem {
   unit: string | null;
   date_type: DateType;
   listed_date: string; // YYYY-MM-DD
+  purchase_date?: string | null;
+  purchase_price?: number | null;
+  source?: FoodSource;
   image_url: string | null;
   status: FoodStatus;
   notification_enabled: boolean;
@@ -53,6 +61,9 @@ export interface EnrichedFood extends FoodItem {
   statusLabel: string;
   countdown: string;
   emoji: string;
+  priorityScore: number;
+  priorityLevel: PriorityLevel;
+  priorityExplanation: string;
 }
 
 export interface ScanResult {
@@ -70,6 +81,21 @@ export interface ScanResult {
   healthScore?: number | null;
   healthTags?: string[] | null;
   allergens?: string[] | null;
+  purchasePrice?: number | null;
+  source?: FoodSource;
+}
+
+export interface ReceiptItem {
+  id: string;
+  name: string;
+  category: FoodCategory;
+  quantity: number | null;
+  unit: string | null;
+  estimatedShelfLifeDays: number;
+  estimatedDate: string;
+  price?: number | null;
+  isFood: boolean;
+  selected: boolean;
 }
 
 export interface ParsedGroceryItem {
@@ -117,6 +143,7 @@ export interface RecipeIngredient {
 }
 
 export interface Recipe {
+  id?: string;
   name: string;
   emoji: string;
   description: string;
@@ -152,6 +179,7 @@ export interface FoodEvent {
   event_type: 'ADDED' | 'UPDATED' | 'CONSUMED' | 'DISCARDED' | 'RESCUED';
   food_name: string;
   quantity_delta: number | null;
+  reason?: DiscardReason | string | null;
   timestamp: string;
 }
 
@@ -161,12 +189,25 @@ export interface ImpactStats {
   rescued: number;
   discarded: number;
   usedBeforeListed: number;
+  totalRescuedValue?: number;
+  totalDiscardedValue?: number;
+}
+
+export interface UserPreferences {
+  dietaryRestrictions: string[];
+  allergies: string[];
+  favoriteCuisines: string[];
+  currencySymbol: string;
+  notificationTiming: number[]; // e.g. [7, 3, 1]
+  emailNotifications: boolean;
+  browserPush: boolean;
 }
 
 export interface AuthUser {
   id: string;
   email: string;
   name?: string;
+  preferences?: UserPreferences;
 }
 
 export interface Session {
@@ -174,3 +215,4 @@ export interface Session {
   refresh_token: string;
   expires_at: number;
 }
+

@@ -3,20 +3,31 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { notifications as notifApi } from '../services/api';
 import {
   LayoutDashboard, ShoppingBasket, Camera, Flame,
-  Bell, Settings, Sparkles, ChevronRight, X, ShoppingCart
+  Bell, Settings, Sparkles, ChevronRight, X, ShoppingCart, PieChart, User
 } from 'lucide-react';
 import AIQuickAddModal from './AIQuickAddModal';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
-const navItems = [
-  { to: '/dashboard',      icon: LayoutDashboard,  label: 'Dashboard',    emoji: '🏠' },
+const desktopNavItems = [
+  { to: '/dashboard',      icon: LayoutDashboard,  label: 'Home',         emoji: '🏠' },
   { to: '/pantry',         icon: ShoppingBasket,   label: 'Pantry',       emoji: '🧺' },
-  { to: '/rescue',         icon: Flame,            label: 'Recipes',      emoji: '🍳' },
+  { to: '/scan',           icon: Camera,           label: 'Scan Food',    emoji: '📷' },
+  { to: '/rescue',         icon: Flame,            label: 'Rescue Food',  emoji: '🍳' },
+  { to: '/insights',       icon: PieChart,         label: 'Insights',     emoji: '📊' },
   { to: '/shopping',       icon: ShoppingCart,     label: 'Shopping',     emoji: '🛒' },
   { to: '/notifications',  icon: Bell,             label: 'Alerts',       emoji: '🔔' },
   { to: '/settings',       icon: Settings,         label: 'Settings',     emoji: '⚙️' },
+  { to: '/profile',        icon: User,             label: 'Profile',      emoji: '👤' },
+];
+
+const mobileNavItems = [
+  { to: '/dashboard',      icon: LayoutDashboard,  label: 'Home' },
+  { to: '/pantry',         icon: ShoppingBasket,   label: 'Pantry' },
+  { to: '/scan',           icon: Camera,           label: 'Scan', isCta: true },
+  { to: '/rescue',         icon: Flame,            label: 'Rescue' },
+  { to: '/profile',        icon: User,             label: 'Profile' },
 ];
 
 // Global event to refresh pantry data without full reload
@@ -93,8 +104,8 @@ export default function AppLayout() {
         </button>
 
         {/* Nav */}
-        <nav className="flex-1 space-y-1">
-          {navItems.map(({ to, icon: Icon, label }) => (
+        <nav className="flex-1 space-y-1 overflow-y-auto">
+          {desktopNavItems.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to} to={to}
               className={({ isActive }) =>
@@ -221,25 +232,30 @@ export default function AppLayout() {
         </div>
 
         {/* ── Mobile Bottom Navigation ── */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200/80 flex items-center justify-around pb-safe z-40 shadow-lg shadow-gray-900/5">
-          {navItems.map(({ to, icon: Icon, label }) => (
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200/80 flex items-center justify-around pb-safe z-40 shadow-lg shadow-gray-900/5 px-2">
+          {mobileNavItems.map(({ to, icon: Icon, label, isCta }) => (
             <NavLink
               key={to} to={to}
               className={({ isActive }) =>
-                `relative flex flex-col items-center gap-0.5 py-2 px-3 min-w-[56px] text-[10px] font-semibold transition-all ${
-                  isActive ? 'text-emerald-800' : 'text-gray-400'
+                `relative flex flex-col items-center gap-0.5 py-2 px-2 min-w-[54px] text-[10px] font-semibold transition-all ${
+                  isCta ? '-mt-4' : isActive ? 'text-emerald-800' : 'text-gray-400'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-emerald-100' : ''}`}>
-                    <Icon size={18} className={isActive ? 'text-emerald-800' : 'text-gray-400'} />
-                  </div>
-                  <span className={isActive ? 'font-bold text-emerald-800' : ''}>{label.split(' ')[0]}</span>
-                  {to === '/notifications' && urgentCount > 0 && (
-                    <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-red-500 border border-white" />
+                  {isCta ? (
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-800 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-800/30">
+                      <Icon size={20} />
+                    </div>
+                  ) : (
+                    <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-emerald-100' : ''}`}>
+                      <Icon size={18} className={isActive ? 'text-emerald-800' : 'text-gray-400'} />
+                    </div>
                   )}
+                  <span className={isCta ? 'font-bold text-emerald-800 text-[10px] mt-0.5' : isActive ? 'font-bold text-emerald-800' : ''}>
+                    {label}
+                  </span>
                 </>
               )}
             </NavLink>

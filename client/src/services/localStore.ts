@@ -1,6 +1,7 @@
-import type { FoodItem, Notification, FoodCategory, Recipe } from '../types';
+import type { FoodItem, Notification, FoodCategory, Recipe, FoodEvent, DiscardReason } from '../types';
 
-const PANTRY_KEY = 'fg_local_pantry_v2';
+const PANTRY_KEY = 'fg_local_pantry_v3';
+const EVENTS_KEY = 'fg_local_events_v3';
 
 const INITIAL_FOODS: FoodItem[] = [
   {
@@ -12,6 +13,9 @@ const INITIAL_FOODS: FoodItem[] = [
     unit: 'pack',
     date_type: 'BEST_BEFORE',
     listed_date: new Date(Date.now() + 1 * 86400000).toISOString().slice(0, 10),
+    purchase_date: new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10),
+    purchase_price: 60,
+    source: 'SCAN',
     image_url: null,
     status: 'ACTIVE',
     notification_enabled: true,
@@ -36,6 +40,9 @@ const INITIAL_FOODS: FoodItem[] = [
     unit: 'L',
     date_type: 'BEST_BEFORE',
     listed_date: new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10),
+    purchase_date: new Date(Date.now() - 4 * 86400000).toISOString().slice(0, 10),
+    purchase_price: 90,
+    source: 'BARCODE',
     image_url: null,
     status: 'ACTIVE',
     notification_enabled: true,
@@ -60,6 +67,9 @@ const INITIAL_FOODS: FoodItem[] = [
     unit: 'g',
     date_type: 'USE_BY',
     listed_date: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10),
+    purchase_date: new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10),
+    purchase_price: 240,
+    source: 'SCAN',
     image_url: null,
     status: 'ACTIVE',
     notification_enabled: true,
@@ -227,6 +237,63 @@ export function deleteLocalFood(id: string): boolean {
   return false;
 }
 
+export function getLocalEvents(): FoodEvent[] {
+  try {
+    const raw = localStorage.getItem(EVENTS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [];
+}
+
+export function logLocalEvent(eventType: FoodEvent['event_type'], foodId: string, foodName: string, delta: number | null = null, reason?: DiscardReason | string | null) {
+  const events = getLocalEvents();
+  const newEv: FoodEvent = {
+    id: `ev_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    food_id: foodId,
+    user_id: '00000000-0000-0000-0000-000000000001',
+    event_type: eventType,
+    food_name: foodName,
+    quantity_delta: delta,
+    reason: reason || null,
+    timestamp: new Date().toISOString(),
+  };
+  events.unshift(newEv);
+  try { localStorage.setItem(EVENTS_KEY, JSON.stringify(events)); } catch {}
+  return newEv;
+}
+
+export function executeCookRecipe(recipe: Recipe): { success: boolean; itemsUpdated: string[] } {
+  const current = getLocalFoods();
+  const usedIngredients = [
+    ...(recipe.urgentIngredientsUsed || []),
+    ...(recipe.pantryIngredientsUsed || []),
+    ...(recipe.ingredients ? recipe.ingredients.map(i => i.name) : [])
+  ].map(s => s.toLowerCase());
+
+  const updatedNames: string[] = [];
+
+  const updated = current.map(item => {
+    const isMatched = usedIngredients.some(name =>
+      item.name.toLowerCase().includes(name) || name.includes(item.name.toLowerCase())
+    );
+
+    if (isMatched && item.status === 'ACTIVE') {
+      updatedNames.push(item.name);
+      logLocalEvent('RESCUED', item.id, item.name, item.quantity);
+      return {
+        ...item,
+        status: 'CONSUMED' as const,
+        consumed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    }
+    return item;
+  });
+
+  saveLocalFoods(updated);
+  return { success: true, itemsUpdated: updatedNames };
+}
+
 export function getLocalStats() {
   const foods = getLocalFoods();
   const today = new Date();
@@ -235,17 +302,35 @@ export function getLocalStats() {
   let urgentCount = 0;
   let warningCount = 0;
   let freshCount = 0;
+  let totalAtRiskValue = 0;
+  let totalRescuedValue = 0;
+  let totalDiscardedValue = 0;
 
   const active = foods.filter(f => f.status === 'ACTIVE');
-  const consumed = foods.filter(f => f.status === 'CONSUMED').length;
-  const discarded = foods.filter(f => f.status === 'DISCARDED').length;
+  const consumedFoods = foods.filter(f => f.status === 'CONSUMED');
+  const discardedFoods = foods.filter(f => f.status === 'DISCARDED');
 
   active.forEach(f => {
-    const listed = new Date(f.listed_date + 'T00:00:00');
+    const listed = new Date((f.listed_date || '').includes('T') ? f.listed_date : f.listed_date + 'T12:00:00');
+    listed.setHours(0, 0, 0, 0);
     const diffDays = Math.round((listed.getTime() - today.getTime()) / 86400000);
-    if (diffDays <= 1) urgentCount++;
-    else if (diffDays <= 3) warningCount++;
-    else freshCount++;
+    if (diffDays <= 1) {
+      urgentCount++;
+      if (f.purchase_price) totalAtRiskValue += f.purchase_price;
+    } else if (diffDays <= 3) {
+      warningCount++;
+      if (f.purchase_price) totalAtRiskValue += f.purchase_price;
+    } else {
+      freshCount++;
+    }
+  });
+
+  consumedFoods.forEach(f => {
+    if (f.purchase_price) totalRescuedValue += f.purchase_price;
+  });
+
+  discardedFoods.forEach(f => {
+    if (f.purchase_price) totalDiscardedValue += f.purchase_price;
   });
 
   return {
@@ -253,9 +338,12 @@ export function getLocalStats() {
     urgentCount,
     warningCount,
     freshCount,
-    consumed,
-    discarded,
-    rescued: consumed,
+    consumed: consumedFoods.length,
+    discarded: discardedFoods.length,
+    rescued: consumedFoods.length,
+    totalAtRiskValue,
+    totalRescuedValue,
+    totalDiscardedValue,
   };
 }
 

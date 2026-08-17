@@ -4,7 +4,7 @@ import { foods as foodsApi, recipes as recipesApi, ai as aiApi } from '../servic
 import type { FoodItem, Recipe, MealPlanDay } from '../types';
 import { enrichFood, sortByUrgency } from '../utils/freshness';
 import toast from 'react-hot-toast';
-import { Clock, Sparkles, CalendarDays, Utensils, RefreshCw, ChevronRight } from 'lucide-react';
+import { Clock, Sparkles, Utensils, RefreshCw, ChevronRight, Flame } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 // Store generated recipes in sessionStorage so RecipeDetails survives page reload
@@ -131,32 +131,28 @@ export default function Rescue() {
           </div>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex bg-gray-100/90 p-1 rounded-2xl mt-4 max-w-sm">
-          <button
-            onClick={() => setActiveTab('recipes')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'recipes'
-                ? 'bg-white text-gray-900 shadow-xs'
-                : 'text-gray-500 hover:text-gray-800'
-            }`}
-          >
-            <Utensils size={14} className="text-orange-500" /> Rescue Recipes
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('mealplan');
-              if (mealPlan.length === 0) handleGenerateMealPlan();
-            }}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'mealplan'
-                ? 'bg-white text-gray-900 shadow-xs'
-                : 'text-gray-500 hover:text-gray-800'
-            }`}
-          >
-            <CalendarDays size={14} className="text-emerald-700" /> 3-Day Meal Plan
-          </button>
-        </div>
+        {/* Mode Tabs */}
+      <div className="flex bg-gray-200/70 p-1 rounded-2xl mt-4">
+        <button
+          onClick={() => setActiveTab('recipes')}
+          className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+            activeTab === 'recipes' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Flame size={14} className="text-orange-500" /> Prevent Food Waste
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('mealplan');
+            if (mealPlan.length === 0) handleGenerateMealPlan();
+          }}
+          className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+            activeTab === 'mealplan' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Utensils size={14} className="text-emerald-600" /> What Can I Make?
+        </button>
+      </div>
       </div>
 
       {activeTab === 'recipes' ? (
