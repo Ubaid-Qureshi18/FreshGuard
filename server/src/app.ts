@@ -1,4 +1,4 @@
-import 'dotenv/config';
+try { require('dotenv').config(); } catch {}
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
