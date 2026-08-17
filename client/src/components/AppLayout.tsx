@@ -3,9 +3,10 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { notifications as notifApi } from '../services/api';
 import {
   LayoutDashboard, ShoppingBasket, Camera, Flame,
-  Bell, Settings, Sparkles, ChevronRight, X, ShoppingCart, PieChart, User
+  Bell, Settings, Sparkles, ChevronRight, X, ShoppingCart, PieChart, User, CalendarDays, Bot, Scale
 } from 'lucide-react';
 import AIQuickAddModal from './AIQuickAddModal';
+import AskAIModal from './AskAIModal';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -13,21 +14,23 @@ import toast from 'react-hot-toast';
 const desktopNavItems = [
   { to: '/dashboard',      icon: LayoutDashboard,  label: 'Home',         emoji: '🏠' },
   { to: '/pantry',         icon: ShoppingBasket,   label: 'Pantry',       emoji: '🧺' },
-  { to: '/scan',           icon: Camera,           label: 'Scan Food',    emoji: '📷' },
-  { to: '/rescue',         icon: Flame,            label: 'Rescue Food',  emoji: '🍳' },
+  { to: '/shopping',       icon: ShoppingCart,     label: 'Groceries',    emoji: '🛒' },
+  { to: '/rescue',         icon: Flame,            label: 'Recipes',      emoji: '🍳' },
+  { to: '/mealplan',       icon: CalendarDays,     label: 'Meal Plan',    emoji: '📅' },
   { to: '/insights',       icon: PieChart,         label: 'Insights',     emoji: '📊' },
-  { to: '/shopping',       icon: ShoppingCart,     label: 'Shopping',     emoji: '🛒' },
+  { to: '/compare',        icon: Scale,            label: 'Compare',      emoji: '⚖️' },
+  { to: '/scan',           icon: Camera,           label: 'Scan Food',    emoji: '📷' },
   { to: '/notifications',  icon: Bell,             label: 'Alerts',       emoji: '🔔' },
-  { to: '/settings',       icon: Settings,         label: 'Settings',     emoji: '⚙️' },
   { to: '/profile',        icon: User,             label: 'Profile',      emoji: '👤' },
+  { to: '/settings',       icon: Settings,         label: 'Settings',     emoji: '⚙️' },
 ];
 
 const mobileNavItems = [
   { to: '/dashboard',      icon: LayoutDashboard,  label: 'Home' },
   { to: '/pantry',         icon: ShoppingBasket,   label: 'Pantry' },
   { to: '/scan',           icon: Camera,           label: 'Scan', isCta: true },
-  { to: '/rescue',         icon: Flame,            label: 'Rescue' },
-  { to: '/profile',        icon: User,             label: 'Profile' },
+  { to: '/shopping',       icon: ShoppingCart,     label: 'Groceries' },
+  { to: '/rescue',         icon: Flame,            label: 'Recipes' },
 ];
 
 // Global event to refresh pantry data without full reload
@@ -41,6 +44,7 @@ export default function AppLayout() {
   const location = useLocation();
   const { user, logout } = useAuth();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [askAiOpen, setAskAiOpen] = useState(false);
   const [urgentCount, setUrgentCount] = useState(0);
   const [alarmBanner, setAlarmBanner] = useState<{ urgentFoods: { name: string }[] } | null>(null);
 
@@ -135,14 +139,23 @@ export default function AppLayout() {
           ))}
         </nav>
 
-        {/* Scan Button */}
-        <button
-          onClick={() => navigate('/scan')}
-          className="flex items-center justify-center gap-2 px-3 py-3 rounded-2xl bg-gray-900 text-white font-semibold text-xs hover:bg-gray-800 transition-all mb-4 shadow-md shadow-gray-900/10 mt-4"
-        >
-          <Camera size={15} />
-          AI Camera Scanner
-        </button>
+        {/* Ask AI & Scan Buttons */}
+        <div className="space-y-2 mt-3 mb-3">
+          <button
+            onClick={() => setAskAiOpen(true)}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-2xl bg-emerald-50 text-emerald-900 border border-emerald-200/80 font-bold text-xs hover:bg-emerald-100 transition-all shadow-2xs"
+          >
+            <Bot size={16} className="text-emerald-700" />
+            Ask FreshGuard AI
+          </button>
+          <button
+            onClick={() => navigate('/scan')}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-2xl bg-gray-900 text-white font-bold text-xs hover:bg-gray-800 transition-all shadow-md shadow-gray-900/10"
+          >
+            <Camera size={15} />
+            AI Camera Scanner
+          </button>
+        </div>
 
         {/* App branding footer & user profile */}
         <div className="border-t border-gray-100 pt-4 px-2 space-y-2">
@@ -268,10 +281,15 @@ export default function AppLayout() {
         isOpen={quickAddOpen}
         onClose={() => setQuickAddOpen(false)}
         onSuccess={() => {
-          // Fire custom event to refresh pantry — no full page reload needed
           triggerPantryRefresh();
           toast.success('Items added to pantry! 🌿');
         }}
+      />
+
+      {/* Global Ask AI Modal */}
+      <AskAIModal
+        isOpen={askAiOpen}
+        onClose={() => setAskAiOpen(false)}
       />
     </div>
   );

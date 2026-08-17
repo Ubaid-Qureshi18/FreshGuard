@@ -17,6 +17,8 @@ const Rescue       = lazy(() => import('./pages/Rescue'));
 const RecipeDetails = lazy(() => import('./pages/RecipeDetails'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const ShoppingList  = lazy(() => import('./pages/ShoppingList'));
+const MealPlan      = lazy(() => import('./pages/MealPlan'));
+const CompareProducts = lazy(() => import('./pages/CompareProducts'));
 const Insights     = lazy(() => import('./pages/Insights'));
 const Profile      = lazy(() => import('./pages/Profile'));
 const Settings     = lazy(() => import('./pages/Settings'));
@@ -80,6 +82,8 @@ function AppRoutes() {
           <Route path="recipe/:idx"  element={<RecipeDetails />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="shopping"     element={<ShoppingList />} />
+          <Route path="mealplan"     element={<MealPlan />} />
+          <Route path="compare"      element={<CompareProducts />} />
           <Route path="insights"     element={<Insights />} />
           <Route path="profile"      element={<Profile />} />
           <Route path="settings"     element={<Settings />} />

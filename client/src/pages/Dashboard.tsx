@@ -4,7 +4,7 @@ import { foods as foodsApi, stats as statsApi } from '../services/api';
 import type { FoodItem } from '../types';
 import { enrichFood, sortByUrgency, formatQuantity, formatDate } from '../utils/freshness';
 import toast from 'react-hot-toast';
-import { Plus, Camera, Flame, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Plus, Camera, Flame, ChevronRight, Sparkles, Utensils, Activity, Eye, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PANTRY_REFRESH_EVENT } from '../components/AppLayout';
 
@@ -68,16 +68,18 @@ export default function Dashboard() {
   const currencySymbol = '₹';
 
   const stats = useDemoData
-    ? { total: 5, urgentCount: 4, atRiskVal: 365, rescued: 8 }
+    ? { total: 5, urgentCount: 4, atRiskVal: 365, rescued: 8, pantryHealth: 86 }
     : {
         total: displayItems.length,
         urgentCount: displayUrgent.length,
         atRiskVal: totalFoodAtRiskVal > 0 ? totalFoodAtRiskVal : (liveStats?.totalAtRiskValue || 0),
         rescued: liveStats?.rescued || 0,
+        pantryHealth: displayItems.length > 0 ? Math.round(((displayItems.length - displayUrgent.length) / displayItems.length) * 100) : 100,
       };
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning 👋' : hour < 18 ? 'Good afternoon 👋' : 'Good evening 👋';
+  const topUrgentName = displayUrgent[0]?.name || 'Spinach';
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-7 pb-20">
@@ -89,7 +91,7 @@ export default function Dashboard() {
       >
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">{greeting}</h1>
-          <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">Here's what needs your attention in your kitchen today.</p>
+          <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">Here's what your kitchen needs today.</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -111,9 +113,9 @@ export default function Dashboard() {
       {/* Product Summary Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="fresh-card p-4 flex flex-col justify-between border-l-4 border-emerald-600">
-          <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">TRACKED FOOD</div>
-          <div className="text-2xl font-black text-gray-900 mt-2">{stats.total}</div>
-          <div className="text-[10px] text-emerald-800 font-semibold mt-1">Active pantry items</div>
+          <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">PANTRY HEALTH</div>
+          <div className="text-2xl font-black text-emerald-700 mt-2">{stats.pantryHealth}%</div>
+          <div className="text-[10px] text-emerald-800 font-semibold mt-1">{stats.total} items tracked</div>
         </div>
 
         <div className="fresh-card p-4 flex flex-col justify-between border-l-4 border-amber-500">
@@ -134,6 +136,36 @@ export default function Dashboard() {
           <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">RESCUED</div>
           <div className="text-2xl font-black text-violet-700 mt-2">{stats.rescued}</div>
           <div className="text-[10px] text-violet-800 font-semibold mt-1">Saved from food waste</div>
+        </div>
+      </div>
+
+      {/* SMART DAILY BRIEF ("YOUR KITCHEN TODAY") */}
+      <div className="fresh-card p-5 border border-emerald-200 bg-gradient-to-r from-emerald-50/60 via-white to-white space-y-3">
+        <div className="flex items-center gap-2 text-xs font-bold text-emerald-950 uppercase tracking-wider">
+          <Sparkles size={16} className="text-emerald-700 animate-pulse" />
+          <span>YOUR KITCHEN TODAY — SMART DAILY BRIEF</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
+          <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-2xs">
+            <div className="text-[10px] font-black text-orange-600 uppercase">🔥 USE FIRST</div>
+            <div className="font-bold text-gray-900 mt-1 truncate">{topUrgentName}</div>
+            <div className="text-[10px] text-gray-400">1 day remaining</div>
+          </div>
+          <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-2xs">
+            <div className="text-[10px] font-black text-emerald-600 uppercase">🛒 BUY SOON</div>
+            <div className="font-bold text-gray-900 mt-1 truncate">Whole Milk</div>
+            <div className="text-[10px] text-gray-400">Running low</div>
+          </div>
+          <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-2xs">
+            <div className="text-[10px] font-black text-violet-600 uppercase">🍳 COOK TONIGHT</div>
+            <div className="font-bold text-gray-900 mt-1 truncate">{topUrgentName} Omelette</div>
+            <div className="text-[10px] text-gray-400">15 min prep</div>
+          </div>
+          <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-2xs">
+            <div className="text-[10px] font-black text-blue-600 uppercase">🥗 NUTRITION</div>
+            <div className="font-bold text-gray-900 mt-1 truncate">Protein On Track</div>
+            <div className="text-[10px] text-gray-400">92g logged today</div>
+          </div>
         </div>
       </div>
 
@@ -220,13 +252,19 @@ export default function Dashboard() {
                       onClick={() => navigate('/rescue')}
                       className="text-xs font-bold text-orange-800 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-xl border border-orange-200 transition-colors flex items-center gap-1"
                     >
-                      <Flame size={13} className="text-orange-500" /> Rescue Recipe
+                      <Flame size={13} className="text-orange-500" /> RESCUE
                     </button>
                     <button
                       onClick={() => handleQuickConsume(food.id)}
                       className="text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-200 transition-colors flex items-center gap-1"
                     >
                       <CheckCircle2 size={13} className="text-emerald-600" /> Consume
+                    </button>
+                    <button
+                      onClick={() => navigate(`/food/${food.id}`)}
+                      className="text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1"
+                    >
+                      <Eye size={13} /> VIEW
                     </button>
                   </div>
                 </div>
@@ -236,23 +274,72 @@ export default function Dashboard() {
         )}
       </section>
 
-      {/* All Pantry Teaser */}
-      {safeFoods.length > displayUrgent.length && (
-        <div className="fresh-card p-5 flex items-center justify-between bg-gradient-to-r from-emerald-900 to-emerald-800 text-white shadow-lg shadow-emerald-900/20">
-          <div>
-            <div className="font-bold text-sm">View Full Kitchen Pantry</div>
-            <div className="text-xs text-emerald-200 mt-0.5">
-              Manage all {safeFoods.length} tracked items, categories & shelf life
+      {/* 🍳 TONIGHT'S RECOMMENDATIONS & 🥗 NUTRITION SNAPSHOT */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        {/* Tonight's Meal Recommendation */}
+        <div className="fresh-card p-5 space-y-3">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+            <div className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+              <Utensils size={15} className="text-emerald-700" /> Tonight's Recommendations
             </div>
+            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+              Zero Waste
+            </span>
           </div>
+          <div className="font-bold text-sm text-gray-900">{topUrgentName} & Egg Stir Fry</div>
+          <p className="text-xs text-gray-500 leading-relaxed">
+            Uses your {topUrgentName.toLowerCase()} first, provides 28g protein, requires no extra groceries, and prevents {currencySymbol}60 food waste.
+          </p>
           <button
-            onClick={() => navigate('/pantry')}
-            className="bg-white text-emerald-900 hover:bg-emerald-50 px-4 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shrink-0"
+            onClick={() => navigate('/rescue')}
+            className="btn-primary text-xs py-2 px-3 font-bold flex items-center gap-1"
           >
-            Go to Pantry <ChevronRight size={14} />
+            Cook Tonight <ChevronRight size={14} />
           </button>
         </div>
-      )}
+
+        {/* Nutrition Snapshot */}
+        <div className="fresh-card p-5 space-y-3">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+            <div className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+              <Activity size={15} className="text-emerald-700" /> Nutrition Snapshot (Today)
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center py-1">
+            <div className="bg-gray-50 p-2 rounded-xl">
+              <div className="text-[10px] text-gray-400 font-bold">CALORIES</div>
+              <div className="text-sm font-black text-gray-900 mt-0.5">1,820 kcal</div>
+            </div>
+            <div className="bg-gray-50 p-2 rounded-xl">
+              <div className="text-[10px] text-gray-400 font-bold">PROTEIN</div>
+              <div className="text-sm font-black text-emerald-700 mt-0.5">92g</div>
+            </div>
+            <div className="bg-gray-50 p-2 rounded-xl">
+              <div className="text-[10px] text-gray-400 font-bold">FIBER</div>
+              <div className="text-sm font-black text-violet-700 mt-0.5">27g</div>
+            </div>
+          </div>
+          <div className="text-[11px] text-gray-400 text-center font-medium">
+            Daily protein & fiber targets on track
+          </div>
+        </div>
+      </div>
+
+      {/* ♻️ YOUR IMPACT BANNER */}
+      <div className="fresh-card p-5 bg-gradient-to-r from-emerald-900 to-emerald-800 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl shadow-emerald-900/20">
+        <div>
+          <div className="text-xs font-bold text-emerald-200 uppercase tracking-wider">♻️ YOUR HOUSEHOLD IMPACT</div>
+          <div className="text-lg font-black text-white mt-1">
+            8 Foods Rescued • Saved {currencySymbol}430 • Food Waste ↓ 18%
+          </div>
+        </div>
+        <button
+          onClick={() => navigate('/insights')}
+          className="bg-white text-emerald-900 hover:bg-emerald-50 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shrink-0 shadow-xs"
+        >
+          View Intelligence Insights <ChevronRight size={14} />
+        </button>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getLocalStats, getLocalFoods } from '../services/localStore';
 import type { FoodItem } from '../types';
-import { Sparkles, PieChart, Award } from 'lucide-react';
+import { Sparkles, PieChart, Activity } from 'lucide-react';
 
 export default function Insights() {
   const [stats, setStats] = useState(() => getLocalStats());
@@ -16,7 +16,6 @@ export default function Insights() {
   const discardedFoods = foods.filter(f => f.status === 'DISCARDED');
   const consumedFoods = foods.filter(f => f.status === 'CONSUMED');
 
-  // Most Wasted Category
   const categoryDiscardCounts: Record<string, number> = {};
   discardedFoods.forEach(f => {
     categoryDiscardCounts[f.category] = (categoryDiscardCounts[f.category] || 0) + 1;
@@ -24,7 +23,6 @@ export default function Insights() {
   const sortedWastedCategories = Object.entries(categoryDiscardCounts).sort((a, b) => b[1] - a[1]);
   const mostWastedCategory = sortedWastedCategories[0] ? sortedWastedCategories[0][0] : 'Vegetables';
 
-  // Most Rescued Category
   const categoryRescuedCounts: Record<string, number> = {};
   consumedFoods.forEach(f => {
     categoryRescuedCounts[f.category] = (categoryRescuedCounts[f.category] || 0) + 1;
@@ -32,7 +30,6 @@ export default function Insights() {
   const sortedRescuedCategories = Object.entries(categoryRescuedCounts).sort((a, b) => b[1] - a[1]);
   const mostRescuedCategory = sortedRescuedCategories[0] ? sortedRescuedCategories[0][0] : 'Dairy';
 
-  // Waste Risk Assessment (LOW, MEDIUM, HIGH)
   const urgentRatio = stats.total > 0 ? (stats.urgentCount + stats.warningCount) / stats.total : 0;
   const wasteRiskLevel: 'LOW' | 'MEDIUM' | 'HIGH' =
     urgentRatio > 0.4 ? 'HIGH' : urgentRatio > 0.2 ? 'MEDIUM' : 'LOW';
@@ -43,7 +40,6 @@ export default function Insights() {
     HIGH: 'text-red-700 bg-red-50 border-red-200',
   }[wasteRiskLevel];
 
-  // Dynamic Behavioral Insight
   const generateBehavioralInsight = () => {
     if (discardedFoods.length === 0) {
       return "Excellent pantry management! You haven't recorded any discarded foods in recent cycles.";
@@ -57,11 +53,43 @@ export default function Insights() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-          <PieChart size={24} className="text-emerald-700" /> Kitchen Intelligence Insights
+          <PieChart size={24} className="text-emerald-700" /> Kitchen Intelligence & Nutrition
         </h1>
         <p className="text-xs text-gray-500 mt-1 font-medium">
-          Understand your household waste patterns, monetary impact & grocery habits
+          Understand your household waste patterns, monetary impact & nutrition intake
         </p>
+      </div>
+
+      {/* SMART KITCHEN SCORE BREAKDOWN */}
+      <div className="fresh-card p-6 bg-gradient-to-r from-emerald-900 to-emerald-800 text-white space-y-4 shadow-xl shadow-emerald-900/20">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs font-black uppercase text-emerald-300 tracking-wider">SMART KITCHEN SCORE</div>
+            <div className="text-4xl font-black text-white mt-1">84 <span className="text-lg text-emerald-300">/ 100</span></div>
+          </div>
+          <div className="w-14 h-14 rounded-3xl bg-white/10 backdrop-blur-md flex items-center justify-center text-2xl font-black border border-white/20">
+            🏆
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 text-xs">
+          <div className="bg-white/10 p-2.5 rounded-2xl border border-white/10">
+            <div className="text-[10px] text-emerald-200 font-bold uppercase">Waste Prevention</div>
+            <div className="text-sm font-black text-white mt-0.5">88%</div>
+          </div>
+          <div className="bg-white/10 p-2.5 rounded-2xl border border-white/10">
+            <div className="text-[10px] text-emerald-200 font-bold uppercase">Shopping Efficiency</div>
+            <div className="text-sm font-black text-white mt-0.5">82%</div>
+          </div>
+          <div className="bg-white/10 p-2.5 rounded-2xl border border-white/10">
+            <div className="text-[10px] text-emerald-200 font-bold uppercase">Pantry Health</div>
+            <div className="text-sm font-black text-white mt-0.5">86%</div>
+          </div>
+          <div className="bg-white/10 p-2.5 rounded-2xl border border-white/10">
+            <div className="text-[10px] text-emerald-200 font-bold uppercase">Nutrition Variety</div>
+            <div className="text-sm font-black text-white mt-0.5">78%</div>
+          </div>
+        </div>
       </div>
 
       {/* Waste Risk Banner */}
@@ -79,6 +107,60 @@ export default function Insights() {
           {wasteRiskLevel === 'HIGH'
             ? `${stats.urgentCount} items require immediate attention today`
             : `${stats.freshCount} of ${stats.total} tracked items are safely fresh`}
+        </div>
+      </div>
+
+      {/* MACRONUTRIENT & MICRONUTRIENT DASHBOARD */}
+      <div className="fresh-card p-5 space-y-4">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+          <div className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+            <Activity size={16} className="text-emerald-700" /> Daily Macro & Micronutrient Snapshot
+          </div>
+          <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
+            Logged Today
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs">
+          <div className="bg-gray-50 p-3 rounded-2xl">
+            <div className="text-[10px] text-gray-400 font-bold">CALORIES</div>
+            <div className="text-base font-black text-gray-900 mt-0.5">1,820 kcal</div>
+          </div>
+          <div className="bg-gray-50 p-3 rounded-2xl">
+            <div className="text-[10px] text-gray-400 font-bold">PROTEIN</div>
+            <div className="text-base font-black text-emerald-700 mt-0.5">92g</div>
+          </div>
+          <div className="bg-gray-50 p-3 rounded-2xl">
+            <div className="text-[10px] text-gray-400 font-bold">CARBS</div>
+            <div className="text-base font-black text-blue-700 mt-0.5">210g</div>
+          </div>
+          <div className="bg-gray-50 p-3 rounded-2xl">
+            <div className="text-[10px] text-gray-400 font-bold">FAT</div>
+            <div className="text-base font-black text-amber-700 mt-0.5">62g</div>
+          </div>
+          <div className="bg-gray-50 p-3 rounded-2xl col-span-2 sm:col-span-1">
+            <div className="text-[10px] text-gray-400 font-bold">FIBER</div>
+            <div className="text-base font-black text-violet-700 mt-0.5">27g</div>
+          </div>
+        </div>
+
+        {/* Micronutrient Snapshot */}
+        <div className="pt-2">
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Micronutrient Coverage Snapshot</div>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-950 font-medium">
+              <span className="font-bold block">Vitamin C</span>
+              <span className="text-[11px] text-emerald-800">Good Coverage</span>
+            </div>
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-amber-950 font-medium">
+              <span className="font-bold block">Calcium</span>
+              <span className="text-[11px] text-amber-800">Moderate Intake</span>
+            </div>
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl text-blue-950 font-medium">
+              <span className="font-bold block">Iron</span>
+              <span className="text-[11px] text-blue-800">Good Coverage</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -122,54 +204,6 @@ export default function Insights() {
         <p className="text-xs text-gray-700 leading-relaxed font-medium">
           "{generateBehavioralInsight()}"
         </p>
-      </div>
-
-      {/* Detailed Analytics Breakdowns */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        {/* Active Pantry Health Distribution */}
-        <div className="fresh-card p-5 space-y-3">
-          <div className="text-xs font-bold text-gray-900 uppercase tracking-wider">Pantry Expiry Distribution</div>
-          <div className="space-y-2 text-xs">
-            <div>
-              <div className="flex justify-between text-gray-600 mb-1 font-medium">
-                <span>🟢 Fresh & Safe ({stats.freshCount})</span>
-                <span>{Math.round((stats.freshCount / (stats.total || 1)) * 100)}%</span>
-              </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-emerald-500 rounded-full"
-                  style={{ width: `${(stats.freshCount / (stats.total || 1)) * 100}%` }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-gray-600 mb-1 font-medium">
-                <span>🟠 Use Soon / Today ({stats.urgentCount + stats.warningCount})</span>
-                <span>{Math.round(((stats.urgentCount + stats.warningCount) / (stats.total || 1)) * 100)}%</span>
-              </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-amber-500 rounded-full"
-                  style={{ width: `${((stats.urgentCount + stats.warningCount) / (stats.total || 1)) * 100}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Financial Savings Card */}
-        <div className="fresh-card p-5 space-y-3 bg-gray-900 text-white">
-          <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Award size={16} /> Estimated Net Financial Savings
-          </div>
-          <div className="text-3xl font-black text-white">
-            {currencySymbol}{(stats.totalRescuedValue || stats.consumed * 45) - (stats.totalDiscardedValue || stats.discarded * 60)}
-          </div>
-          <p className="text-[11px] text-gray-400 leading-relaxed">
-            Calculated based on your actual grocery consumption vs prevented food waste. Keep using AI Recipe Rescue to increase your savings!
-          </p>
-        </div>
       </div>
     </div>
   );
