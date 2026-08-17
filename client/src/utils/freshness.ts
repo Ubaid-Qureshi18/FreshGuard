@@ -26,12 +26,19 @@ const PERISHABILITY_FACTORS: Record<FoodCategory, number> = {
   Beverages: 0.3, Condiments: 0.2, Snacks: 0.2, Grains: 0.1, Other: 0.3,
 };
 
-export function getDaysRemaining(listedDate: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const listed = new Date(listedDate + (listedDate.includes('T') ? '' : 'T12:00:00'));
-  listed.setHours(0, 0, 0, 0);
-  return Math.round((listed.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+export function getDaysRemaining(listedDate?: string | null): number {
+  if (!listedDate) return 5;
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dateStr = String(listedDate);
+    const listed = new Date(dateStr + (dateStr.includes('T') ? '' : 'T12:00:00'));
+    if (isNaN(listed.getTime())) return 5;
+    listed.setHours(0, 0, 0, 0);
+    return Math.round((listed.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  } catch {
+    return 5;
+  }
 }
 
 export function getFreshnessStatus(days: number): FreshnessStatus {

@@ -54,7 +54,7 @@ export default function Scanner() {
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        videoRef.current.play().catch(() => {});
       }
     } catch {
       setCaptureMode('upload');

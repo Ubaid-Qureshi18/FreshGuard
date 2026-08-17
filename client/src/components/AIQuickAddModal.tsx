@@ -30,7 +30,7 @@ export default function AIQuickAddModal({ isOpen, onClose, onSuccess }: AIQuickA
     setParsing(true);
     try {
       const { data } = await aiApi.parseText(text);
-      if (data.items && data.items.length > 0) {
+      if (data?.items && Array.isArray(data.items) && data.items.length > 0) {
         setItems(data.items);
         setStep('review');
         toast.success(`AI parsed ${data.items.length} items! 🌿`);
