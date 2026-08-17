@@ -27,6 +27,7 @@ export interface FullNutrition {
   vitaminB1?: number;  // mg (Thiamine)
   vitaminB2?: number;  // mg (Riboflavin)
   vitaminB3?: number;  // mg (Niacin)
+  vitaminB5?: number;  // mg (Pantothenic Acid)
   vitaminB6?: number;  // mg
   vitaminB9?: number;  // mcg (Folate)
   vitaminB12?: number; // mcg
@@ -37,6 +38,7 @@ export interface FullNutrition {
   potassium?: number;  // mg
   zinc?: number;       // mg
   copper?: number;     // mg
+  manganese?: number;  // mg
   selenium?: number;   // mcg
   estimated?: boolean;
 }

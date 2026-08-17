@@ -53,25 +53,6 @@ const MICRO_MINERALS: { key: keyof NutritionData; label: string; unit: string; d
   { key: 'selenium',   label: 'Selenium',   unit: 'mcg', dv: 55   },
 ];
 
-// ── Lazy food image with fallback ────────────────────────────────────────────
-function FoodImage({ food, className = '' }: { food: FoodItem; className?: string }) {
-  const [imgSrc, setImgSrc] = useState(
-    food.image_url || getFoodImageUrl(food.name, food.category)
-  );
-  return (
-    <img
-      src={imgSrc}
-      alt={food.name}
-      loading="lazy"
-      className={`object-cover ${className}`}
-      onError={() => {
-        const fallback = `https://images.unsplash.com/photo-1543362906-acfc16c67564?w=400&q=80&auto=format`;
-        if (imgSrc !== fallback) setImgSrc(fallback);
-      }}
-    />
-  );
-}
-
 // ── Micronutrient bar ────────────────────────────────────────────────────────
 function NutrientBar({ value, dv }: { value: number; dv: number }) {
   const pct = Math.min(100, Math.round((value / dv) * 100));
